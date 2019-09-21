@@ -1,4 +1,4 @@
-import { vec3, vec4, mat4, glMatrix } from "gl-matrix";
+import { vec2, vec3, vec4, mat4, glMatrix } from "gl-matrix";
 import * as WebGLUtils from "%COMMON/WebGLUtils"
 
 
@@ -23,12 +23,55 @@ export class View {
         //create and set up the shader
         this.shaderProgram = WebGLUtils.createShaderProgram(this.gl, vShaderSource, fShaderSource);
 
+        
         //create the data for our quad
+        /*
         let vertexData = new Float32Array([-100, -100, 1, 0, 0,
             100, -100, 0, 1, 0,
             100, 100, 0, 0, 1,
         -100, 100, 1, 1, 1]);
         let indexData = new Uint8Array([0, 1, 2, 0, 2, 3]);
+        */
+
+        //Create data for PacMan by giving triangles' vertices and indices
+        //Let the PacMan circle have 100 radius
+        let radius: number = 100;
+        
+        //Let the number of triangles to be 200
+        let SLICES:number = 200;
+
+        //Create vertex and indices data first
+        let vData : vec2[] = [];
+        let iData : number[] = [];
+
+        //push center data first
+        vData.push(vec2.fromValues(0,0));
+        let i : number = 0;
+        for(i = 0; i < SLICES; i ++) {
+            let theta : number = ((i * 2 * Math.PI / SLICES));
+            vData.push(vec2.fromValues(
+                Math.cos(theta), Math.sin(theta)));
+
+        }
+
+        //we add the last vertex to make the circle watertight
+        vData.push(vec2.fromValues(1, 0));
+
+        //Now do the indices creation
+        for(let j : number = 0; j < vData.length; j ++) {
+            iData.push(i);
+        }
+
+        let indexData: Uint8Array = Uint8Array.from(iData);
+        let vertexData : Float32Array = new Float32Array(function* () {
+            for(let v of vData) {
+                yield v[0];
+                yield v[1];
+            }
+        }());
+
+        
+
         this.numVertices = vertexData.length / 2;
         this.numIndices = indexData.length;
         //enable the current program
