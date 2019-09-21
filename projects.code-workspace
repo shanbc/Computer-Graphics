@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "HelloWebGL"
+		},
+		{
+			"path": "common"
+		},
+		{
+			"path": "PacMan"
+		}
+	]
+}
