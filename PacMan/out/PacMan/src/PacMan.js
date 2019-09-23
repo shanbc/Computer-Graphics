@@ -2,8 +2,8 @@ define(["require", "exports", "./View", "%COMMON/WebGLUtils"], function (require
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     /**
-     * These two global variables count the number of frames since the last count start, and the time
-     * at which the last count was started
+     * These variables keep track of the number of frames since the last count was started, and the
+     * time at which the last count was started
      */
     var numFrames = 0;
     var lastTime = -1;
@@ -15,6 +15,15 @@ define(["require", "exports", "./View", "%COMMON/WebGLUtils"], function (require
             console.log("Failed to retrieve the <canvas> element");
             return;
         }
+        //make canvas span the entire browser window
+        canvas.width = window.innerWidth / 2;
+        canvas.height = window.innerHeight / 2;
+        //now cover the case where the window is manually resized
+        window.addEventListener("resize", (ev) => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            view.setDimensions(canvas.width, canvas.height);
+        });
         //get the rendering context for webgl
         let gl = WebGLUtils.setupWebGL(canvas, { 'antialias': false, 'alpha': false, 'depth': false, 'stencil': false });
         // Only continue if WebGL is available and working
@@ -27,27 +36,25 @@ define(["require", "exports", "./View", "%COMMON/WebGLUtils"], function (require
         let fShaderSource;
         vShaderSource = getVShader();
         fShaderSource = getFShader();
+        let width = Number(canvas.getAttribute("width"));
+        let height = Number(canvas.getAttribute("height"));
+        view.setDimensions(width, height);
         view.init(vShaderSource, fShaderSource);
         //set up animation callback function
-        //first we write the function that will be called at every tick
         var tick = function () {
             if (lastTime == -1) {
                 lastTime = new Date().getTime();
             }
-            numFrames = numFrames + 1; //increment the frame number
-            if (numFrames >= 100) { //if we have counted 100 frames, find out time taken
+            numFrames = numFrames + 1;
+            if (numFrames >= 100) {
                 let currentTime = new Date().getTime();
                 let frameRate = 1000 * numFrames / (currentTime - lastTime);
                 lastTime = currentTime;
-                //now display the frame rate
                 document.getElementById('frameratedisplay').innerHTML = "Frame rate: " + frameRate.toFixed(1);
-                //reset the counter
                 numFrames = 0;
             }
-            //call the animate function of the view. 
             view.animate();
-            // this line sets up the animation (i.e. this sets up the auto-loop of repeatedly calling 
-            // tick)
+            //this line sets up the animation
             requestAnimationFrame(tick);
         };
         //call tick the first time
@@ -59,7 +66,7 @@ define(["require", "exports", "./View", "%COMMON/WebGLUtils"], function (require
     }
     function getVShader() {
         return `attribute vec4 vPosition;
-    attribute vec4 vColor;
+    uniform vec4 vColor;
     uniform mat4 proj;
     uniform mat4 modelView;
     varying vec4 outColor;
@@ -74,7 +81,6 @@ define(["require", "exports", "./View", "%COMMON/WebGLUtils"], function (require
     function getFShader() {
         return `precision mediump float;
     varying vec4 outColor;
-
     void main()
     {
         gl_FragColor = outColor;

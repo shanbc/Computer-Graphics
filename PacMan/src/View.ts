@@ -1,83 +1,99 @@
-import { vec2, vec3, vec4, mat4, glMatrix } from "gl-matrix";
+import { vec3, vec4, mat4, glMatrix, vec2 } from "gl-matrix";
 import * as WebGLUtils from "%COMMON/WebGLUtils"
 
 
 export class View {
     private gl: WebGLRenderingContext;
-    private shaderProgram: WebGLShader;
+    private shaderProgram: WebGLProgram;
     private vbo: WebGLBuffer;
     private ibo: WebGLBuffer;
     private numVertices: number;
     private numIndices: number;
     private proj: mat4;
     private modelView: mat4;
-    private time: number;
+    private modelView2: mat4;
+    private center: vec2;
+    private motion: vec2;
+    private radius: number;
+    private dims: vec2;
+    private a: number = 0;
+
+    //This is the value of the current mouth angle in radius
+    private mouthAngle: number;
+    private maxMouthAngle : number;
+    private mouthAngleSpeed : number;
 
     constructor(gl: WebGLRenderingContext) {
         this.gl = gl;
-        this.time = 0;
+        this.center = vec2.fromValues(250, 100);
+        this.motion = vec2.fromValues(4, 4);
+        this.radius = 50;
+        this.dims = vec2.fromValues(0, 0);
+
+        //Initial the mouth angle as 0 and the max angle is 40
+        this.mouthAngle = 0;
+        this.maxMouthAngle = 40;
+        this.mouthAngleSpeed = 1;
+    }
+
+    public setDimensions(width: number, height: number): void {
+        this.dims = vec2.fromValues(width, height);
     }
 
 
     public init(vShaderSource: string, fShaderSource: string): void {
         //create and set up the shader
+        console.log("Vertex shader source:\n" + vShaderSource);
         this.shaderProgram = WebGLUtils.createShaderProgram(this.gl, vShaderSource, fShaderSource);
 
-        
-        //create the data for our quad
-        /*
-        let vertexData = new Float32Array([-100, -100, 1, 0, 0,
-            100, -100, 0, 1, 0,
-            100, 100, 0, 0, 1,
-        -100, 100, 1, 1, 1]);
-        let indexData = new Uint8Array([0, 1, 2, 0, 2, 3]);
-        */
+        //create the data for our circle
+        let vData: vec2[] = [];
+        let iData: number[] = [];
 
-        //Create data for PacMan by giving triangles' vertices and indices
-        //Let the PacMan circle have 100 radius
-        let radius: number = 100;
-        
-        //Let the number of triangles to be 200
-        let SLICES:number = 200;
+        //create vertices here
+        let SLICES: number = 180;
 
-        //Create vertex and indices data first
-        let vData : vec2[] = [];
-        let iData : number[] = [];
-
-        //push center data first
-        vData.push(vec2.fromValues(0,0));
-        let i : number = 0;
-        for(i = 0; i < SLICES; i ++) {
-            let theta : number = ((i * 2 * Math.PI / SLICES));
+        //push the center of the circle as the first vertex
+        vData.push(vec2.fromValues(0, 0));
+        for (let i: number = 0; i < SLICES; i++) {
+            let theta: number = (i * 2 * Math.PI / SLICES);
             vData.push(vec2.fromValues(
                 Math.cos(theta), Math.sin(theta)));
-
         }
 
         //we add the last vertex to make the circle watertight
         vData.push(vec2.fromValues(1, 0));
 
-        //Now do the indices creation
-        for(let j : number = 0; j < vData.length; j ++) {
+
+
+        /*
+        Now we create the indices that will form the pizza slices of the
+        circle. Think about what mode you will use, and accordingly push the
+        indices
+        */
+
+        /* we will use a TRIANGLE_FAN, because this seems tailormade for
+        what we want to do here. This mode will use the indices in order
+        (0,1,2), (0,2,3), (0,3,4), ..., (0,n-1,n)
+        */
+        for (let i: number = 0; i < vData.length; i++) {
             iData.push(i);
         }
 
-        let indexData: Uint8Array = Uint8Array.from(iData);
-        let vertexData : Float32Array = new Float32Array(function* () {
-            for(let v of vData) {
+        //enable the current program
+        this.gl.useProgram(this.shaderProgram);
+
+
+        let vertexData: Float32Array = new Float32Array(function* () {
+            for (let v of vData) {
                 yield v[0];
                 yield v[1];
             }
         }());
 
-        
-
+        let indexData: Uint8Array = Uint8Array.from(iData);
         this.numVertices = vertexData.length / 2;
         this.numIndices = indexData.length;
-        //enable the current program
-        this.gl.useProgram(this.shaderProgram);
-
-
 
         //create a vertex buffer object
         this.vbo = this.gl.createBuffer();
@@ -99,58 +115,100 @@ export class View {
 
         //tell webgl that the position attribute can be found as 2-floats-per-vertex with a gap of 20 bytes 
         //(2 floats per position, 3 floats per color = 5 floats = 20 bytes
-        this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 20, 0);
+        this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 0, 0);
         //tell webgl to enable this vertex attribute array, so that when it draws it will use this
         this.gl.enableVertexAttribArray(positionLocation);
-
-        let colorLocation: number = this.gl.getAttribLocation(this.shaderProgram, "vColor");
-
-        //tell webgl that the position attribute can be found as 3-floats-per-color with a gap of 20 bytes 
-        //(2 floats per position, 3 floats per color = 5 floats = 20 bytes
-        //since the array specifies position and then color, start reading with an offset of 8 bytes (the 2 floats for the first vertex)
-        this.gl.vertexAttribPointer(colorLocation, 3, this.gl.FLOAT, true, 20, 8);
-        //tell webgl to enable this vertex attribute array, so that when it draws it will use this
-        this.gl.enableVertexAttribArray(colorLocation);
 
         //set the clear color
         this.gl.clearColor(1, 1, 0, 1);
 
 
-        this.proj = mat4.ortho(mat4.create(), -200, 200, -200, 200, -100, 100);
-        this.gl.viewport(0, 0, 400, 400);
+        this.proj = mat4.ortho(mat4.create(), 0, this.dims[0], 0, this.dims[1], -1, 1);
+        this.gl.viewport(0, 0, this.dims[0], this.dims[1]);
 
     }
 
     public draw(): void {
+        
         //clear the window
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+        //this.drawPacManCircle();
 
-        //we use the current time as the angle of rotation in degrees
-        this.modelView = mat4.rotate(mat4.create(), mat4.create(), glMatrix.toRadian(this.time % 360), vec3.fromValues(0, 0, 1));
+        if(this.mouthAngle < 0 || this.mouthAngle > 40) {
+            this.mouthAngleSpeed = -this.mouthAngleSpeed;
+        }
+        this.mouthAngle += this.mouthAngleSpeed;
+        //create the data for our circle
+        let vData: vec2[] = [];
+        let iData: number[] = [];
 
+        //create vertices here
+        let SLICES: number = 180;
+
+        //push the center of the circle as the first vertex
+        vData.push(vec2.fromValues(0, 0));
+        for (let i: number = 0; i < SLICES; i++) {
+            let theta: number = (i * 2 * Math.PI / SLICES);
+            vData.push(vec2.fromValues(
+                Math.cos(theta), Math.sin(theta)));
+        }
+
+        //we add the last vertex to make the circle watertight
+        vData.push(vec2.fromValues(1, 0));
+        iData.push(0);
+        for (let i: number = this.mouthAngle / 2; i < vData.length - this.mouthAngle / 2; i++) {
+            iData.push(i);
+        }
+        let vertexData: Float32Array = new Float32Array(function* () {
+            for (let v of vData) {
+                yield v[0];
+                yield v[1];
+            }
+        }());
+
+        let indexData: Uint8Array = Uint8Array.from(iData);
+        this.numVertices = vertexData.length / 2;
+        this.numIndices = indexData.length;
+
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indexData, this.gl.STATIC_DRAW);
+        
+
+        
+        
+        
+        
+        this.drawPacManCircle();
+    }
+
+    public drawPacManCircle() : void {
+        //Set the color of the circle
+        let color: vec4 = vec4.create();
+
+        color[0] = 1;//this.a %  2;
+        color[1] = 0;//this.a %  2;
+        color[2] = 1;//this.a %  2;
+        this.modelView = mat4.create();
+
+        mat4.translate(this.modelView, this.modelView, vec3.fromValues(this.dims[0] / 4, this.dims[1] / 2, 0));
+        mat4.scale(this.modelView, this.modelView, vec3.fromValues(this.radius, this.radius, this.radius));
 
         this.gl.useProgram(this.shaderProgram);
 
         let projectionLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "proj");
         this.gl.uniformMatrix4fv(projectionLocation, false, this.proj);
-
         let modelViewLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
         this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView);
-        this.gl.drawElements(this.gl.TRIANGLES, this.numIndices, this.gl.UNSIGNED_BYTE, 0);
+        let colorLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
+        this.gl.uniform4fv(colorLocation, color);
+
+        //Draw with triangle fans
+        this.gl.drawElements(this.gl.TRIANGLE_FAN, this.numIndices, this.gl.UNSIGNED_BYTE, 0);
 
     }
 
-    /**
-     * This function is called at every frame. See WebGLAnimation.ts for the call
-     */
     public animate(): void {
-        this.time += 1; //increment the angle of rotation. In general this should increment a tick
-        //logic to prevent overflow
-        if (this.time == Number.MAX_SAFE_INTEGER) {
-            this.time = 0;
-        }
-        //draw the frame now
+
+
         this.draw();
     }
-
 }
