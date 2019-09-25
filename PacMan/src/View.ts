@@ -7,37 +7,42 @@ export class View {
     private shaderProgram: WebGLProgram;
     private vbo: WebGLBuffer;
     private ibo: WebGLBuffer;
-    private numVertices: number;
     private numIndices: number;
     private proj: mat4;
     private modelView: mat4;
-    private modelView2: mat4;
-    private center: vec2;
-    private motion: vec2;
     private radius: number;
     private dims: vec2;
-    private a: number = 0;
 
     //This is the value of the current mouth angle in radius
     private mouthAngle: number;
-    private maxMouthAngle : number;
     private mouthAngleSpeed : number;
+
+    //This is the values for disappearing ring
+    //Where it has one disappearing rate
+    private disappearRate : number;
+    private currentDisapperAngle : number;
+    //A flag for two state: 1 as disappearing, -1 as appaering
+    private ringState : number;
 
     constructor(gl: WebGLRenderingContext) {
         this.gl = gl;
-        this.center = vec2.fromValues(250, 100);
-        this.motion = vec2.fromValues(4, 4);
         this.radius = 50;
         this.dims = vec2.fromValues(0, 0);
 
         //Initial the mouth angle as 0 and the max angle is 40
         this.mouthAngle = 0;
-        this.maxMouthAngle = 40;
         this.mouthAngleSpeed = 1;
+
+        //Set the initial rate to be 1 / 360 angle, which will take up 2 pieces of triangles
+        //Initially show full ring and disapper at the start
+        this.disappearRate = -1;
+        this.currentDisapperAngle = 360;
+        this.ringState = -1;
     }
 
     public setDimensions(width: number, height: number): void {
         this.dims = vec2.fromValues(width, height);
+        this.radius = this.dims[1] / 8;
     }
 
 
@@ -92,7 +97,6 @@ export class View {
         }());
 
         let indexData: Uint8Array = Uint8Array.from(iData);
-        this.numVertices = vertexData.length / 2;
         this.numIndices = indexData.length;
 
         //create a vertex buffer object
@@ -159,25 +163,107 @@ export class View {
         for (let i: number = this.mouthAngle / 2; i < vData.length - this.mouthAngle / 2; i++) {
             iData.push(i);
         }
-        let vertexData: Float32Array = new Float32Array(function* () {
-            for (let v of vData) {
-                yield v[0];
-                yield v[1];
-            }
-        }());
 
         let indexData: Uint8Array = Uint8Array.from(iData);
-        this.numVertices = vertexData.length / 2;
         this.numIndices = indexData.length;
+
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indexData, this.gl.STATIC_DRAW);        
+        this.drawPacManCircle();
+        let iData2 : number[] = [];
+        let iData3 : number[] = [];
+        //After finish the drawing of pacman, start calculating another index for big circles of ring
+        if(this.ringState == 1) {
+            //If the ring state is disappering, then reduce the indices per frame
+            //but remember pushing 0 point always.
+            iData2.push(0)
+            for (let i: number = this.currentDisapperAngle / 2; i < vData.length; i++) {
+                iData2.push(i);
+            }
+            indexData = Uint8Array.from(iData2);
+        }
+        if(this.ringState == -1) {
+            for (let i: number = 0; i < vData.length - this.currentDisapperAngle / 2; i++) {
+                iData3.push(i);
+            }
+            iData3.push(vData.length);
+            indexData = Uint8Array.from(iData3);
+        }
+        if(this.currentDisapperAngle < 0 || this.currentDisapperAngle > 360) {
+            this.disappearRate = -this.disappearRate;
+            this.ringState = -this.ringState;
+        }
+        this.currentDisapperAngle += this.disappearRate;
+
+          
+        this.numIndices = indexData.length;      
 
         this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indexData, this.gl.STATIC_DRAW);
         
+        this.drawLargeCircle();
 
-        
-        
-        
-        
-        this.drawPacManCircle();
+        for (let i: number = 0; i < vData.length; i++) {
+            iData.push(i);
+        }
+        indexData = Uint8Array.from(iData);  
+        this.numIndices = indexData.length;      
+
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indexData, this.gl.STATIC_DRAW);
+        this.drawSmallCircle();
+
+        this.proj = mat4.ortho(mat4.create(), 0, this.dims[0], 0, this.dims[1], -1, 1);
+        this.gl.viewport(0, 0, this.dims[0], this.dims[1]);
+    }
+
+    public drawSmallCircle() : void {
+                //Set the color of the circle
+        let color: vec4 = vec4.create();
+
+        color[0] = 1;//this.a %  2;
+        color[1] = 1;//this.a %  2;
+        color[2] = 0;//this.a %  2;
+        this.modelView = mat4.create();
+
+        mat4.translate(this.modelView, this.modelView, vec3.fromValues(this.dims[0] * 3/ 4, this.dims[1] / 2, 0));
+        mat4.scale(this.modelView, this.modelView, vec3.fromValues(this.radius / 2, this.radius / 2, this.radius / 2));
+
+        this.gl.useProgram(this.shaderProgram);
+
+        let projectionLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "proj");
+        this.gl.uniformMatrix4fv(projectionLocation, false, this.proj);
+        let modelViewLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
+        this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView);
+        let colorLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
+        this.gl.uniform4fv(colorLocation, color);
+
+        //Draw with triangle fans
+        this.gl.drawElements(this.gl.TRIANGLE_FAN, this.numIndices, this.gl.UNSIGNED_BYTE, 0);
+
+    }
+
+    public drawLargeCircle() : void {
+        //Set the color of the circle
+        let color: vec4 = vec4.create();
+
+        color[0] = 1;//this.a %  2;
+        color[1] = 1;//this.a %  2;
+        color[2] = 1;//this.a %  2;
+        this.modelView = mat4.create();
+
+        mat4.translate(this.modelView, this.modelView, vec3.fromValues(this.dims[0]  * 3 / 4, this.dims[1] / 2, 0));
+        mat4.scale(this.modelView, this.modelView, vec3.fromValues(this.radius, this.radius, this.radius));
+
+        this.gl.useProgram(this.shaderProgram);
+
+        let projectionLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "proj");
+        this.gl.uniformMatrix4fv(projectionLocation, false, this.proj);
+        let modelViewLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
+        this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView);
+        let colorLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
+        this.gl.uniform4fv(colorLocation, color);
+
+        //Draw with triangle fans
+        this.gl.drawElements(this.gl.TRIANGLE_FAN, this.numIndices, this.gl.UNSIGNED_BYTE, 0);
+
     }
 
     public drawPacManCircle() : void {
