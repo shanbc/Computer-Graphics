@@ -1,6 +1,10 @@
 import { vec3, vec4, mat4, glMatrix, vec2 } from "gl-matrix";
 import * as WebGLUtils from "%COMMON/WebGLUtils"
-
+/* In this project, the main method I used is that using draw() function to recalculate the indices for different circles
+  While the vertex buffer never changed because of circle are the same, the color and position and size will be decided by the
+  scale(), translate() and the colorLoaction. Hence, the only thing we need to consider is which part will be represented on the screen
+  by the time.
+*/
 
 export class View {
     private gl: WebGLRenderingContext;
@@ -215,7 +219,7 @@ export class View {
     }
 
     public drawSmallCircle() : void {
-                //Set the color of the circle
+        //Set the color of the circle as the same as background
         let color: vec4 = vec4.create();
 
         color[0] = 1;//this.a %  2;
