@@ -134,24 +134,70 @@ export class View {
         let blackColor: vec4 = vec4.fromValues(0,0,0,1);
         let clockColor : vec4 = vec4.fromValues(1,1,204/255,1);
         let whiteColor: vec4 = vec4.fromValues(1,1,1,1);
+        let redColor : vec4 = vec4.fromValues(1,0,0,1);
 
         this.modelView.push(mat4.create());
+        //Draw two circle, one bigger black at the back and one smaller at the front
         this.drawCircle(this.outerRadius, blackColor);
-        this.modelView.pop();
-
-
         this.drawCircle(this.innerRadius, clockColor);
-        this.modelView.pop();
-        let time :number = 10;
-        this.drawRectangle(blackColor, time);
-        time += 1;
+        //Draw the markers
+        this.drawMarkers(blackColor);
+        //Draw the pointers
+        this.drawHourHand(blackColor,redColor);
+        this.drawMinHand(blackColor);
+
 
 
         this.proj = mat4.ortho(mat4.create(), 0, this.dims[0], 0, this.dims[1], -1, 1);
         this.gl.viewport(0, 0, this.dims[0], this.dims[1]);
     }
+    private drawMinHand(blackColor: vec4) : void {
+        let rectangleWidth = this.innerRadius / 15;
+        let rectangleHeight = this.innerRadius * 0.9;
+        let date : Date = new Date();
+        let min : number = date.getMinutes() + date.getSeconds() / 60;
+        //Create min hand
+        this.modelView.push(mat4.clone(this.modelView.peek()));
+        mat4.rotate(this.modelView.peek(),this.modelView.peek(), -glMatrix.toRadian(min * 360.0 / 60), [0,0,1]);
+        mat4.translate(this.modelView.peek(), this.modelView.peek(), [-rectangleWidth / 2, 0,0]);
+        mat4.scale(this.modelView.peek(),this.modelView.peek(), [rectangleWidth,rectangleHeight,1]);
+        let modelViewLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
+        this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
+        let colorLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
+        this.gl.uniform4fv(colorLocation, blackColor);
+        this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_BYTE, this.numCircleIndices);
+        this.modelView.pop();
+    }
+    private drawHourHand(blackColor: vec4, redColor: vec4): void {
+        this.gl.useProgram(this.shaderProgram);
+        let projectionLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "proj");
+        this.gl.uniformMatrix4fv(projectionLocation, false, this.proj);
+        this.modelView.push(mat4.clone(this.modelView.peek()));
 
-    private drawRectangle(color: vec4, time: number) : void {
+        mat4.translate(this.modelView.peek(), this.modelView.peek(), vec3.fromValues(this.dims[0] / 2, this.dims[1] / 2, 0));
+        //Get the hour and min and sec info from date
+        let date : Date = new Date();
+        let hour : number = date.getHours() + date.getMinutes() / 60+ date.getSeconds() / 3600;
+        let min : number = date.getMinutes() + date.getSeconds() / 60;
+        let sec : number = date.getSeconds();
+        console.log(hour + " " + min + " " + sec + "\n")
+        let rectangleWidth: number = this.innerRadius / 15;
+        let rectangleHeight : number = this.innerRadius / 2;
+        //Create hour hand
+        this.modelView.push(mat4.clone(this.modelView.peek()));
+        mat4.rotate(this.modelView.peek(),this.modelView.peek(), -glMatrix.toRadian(hour * 360.0 / 12), [0,0,1]);
+        mat4.translate(this.modelView.peek(), this.modelView.peek(), [-rectangleWidth / 2, 0,0]);
+
+        mat4.scale(this.modelView.peek(),this.modelView.peek(), [rectangleWidth,rectangleHeight,1]);
+        let modelViewLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
+        this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
+        let colorLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
+        this.gl.uniform4fv(colorLocation, blackColor);
+        this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_BYTE, this.numCircleIndices);
+        this.modelView.pop();
+    }
+
+    private drawMarkers(color: vec4) : void {
 
         this.gl.useProgram(this.shaderProgram);
         let projectionLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "proj");
@@ -160,7 +206,6 @@ export class View {
         mat4.translate(this.modelView.peek(), this.modelView.peek(), vec3.fromValues(this.dims[0] / 2, this.dims[1] / 2, 0));
         let rectangleWidth: number = 0;
         let rectangleHeight:number = 0;
-
 
         for(let i : number = 0; i < 60; i ++) {
             rectangleWidth = this.innerRadius / 100;
@@ -174,15 +219,10 @@ export class View {
                 rectangleHeight = this.innerRadius / 5;
             }
 
-
-
             this.modelView.push(mat4.clone(this.modelView.peek()));
             mat4.rotate(this.modelView.peek(),this.modelView.peek(), glMatrix.toRadian(i * 360.0 / 60), [0,0,1]);
-            
             mat4.translate(this.modelView.peek(), this.modelView.peek(), [-rectangleWidth / 2, (this.innerRadius - rectangleHeight) * 0.95,0]);
             mat4.scale(this.modelView.peek(),this.modelView.peek(), [rectangleWidth,rectangleHeight,1]);
-
-
             let modelViewLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
             this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
             let colorLocation: WebGLUniformLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
@@ -190,14 +230,11 @@ export class View {
             //Draw with rectangles
             this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_BYTE, this.numCircleIndices); 
             this.modelView.pop();
-
-
         }   
         this.modelView.pop();     
     }
 
     public drawCircle(r : number, color: vec4) : void {
-
         this.modelView.push(mat4.clone(this.modelView.peek()));;
         mat4.translate(this.modelView.peek(), this.modelView.peek(), vec3.fromValues(this.dims[0] / 2, this.dims[1] / 2, 0));
         mat4.scale(this.modelView.peek(), this.modelView.peek(), vec3.fromValues(r, r, r));
@@ -210,6 +247,8 @@ export class View {
         this.gl.uniform4fv(colorLocation, color);
         //Draw with triangle fans
         this.gl.drawElements(this.gl.TRIANGLE_FAN, this.numCircleIndices, this.gl.UNSIGNED_BYTE,0);
+        this.modelView.pop();     
+
     }
 
     public animate(): void {
