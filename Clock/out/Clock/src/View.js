@@ -87,6 +87,14 @@ define(["require", "exports", "gl-matrix", "%COMMON/WebGLUtils", "%COMMON/Stack"
             let clockColor = gl_matrix_1.vec4.fromValues(1, 1, 204 / 255, 1);
             let whiteColor = gl_matrix_1.vec4.fromValues(1, 1, 1, 1);
             let redColor = gl_matrix_1.vec4.fromValues(1, 0, 0, 1);
+            //Get all time info
+            let date = new Date();
+            let sec = date.getSeconds() + date.getMilliseconds() / 1000;
+            let min = date.getMinutes() + date.getSeconds() / 60;
+            let hour = date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
+            let secAngle = -gl_matrix_1.glMatrix.toRadian(sec * 360.0 / 60);
+            let minAngle = -gl_matrix_1.glMatrix.toRadian(min * 360.0 / 60);
+            let hourAngle = -gl_matrix_1.glMatrix.toRadian(hour * 360.0 / 12);
             this.gl.useProgram(this.shaderProgram);
             let projectionLocation = this.gl.getUniformLocation(this.shaderProgram, "proj");
             this.gl.uniformMatrix4fv(projectionLocation, false, this.proj);
@@ -99,75 +107,25 @@ define(["require", "exports", "gl-matrix", "%COMMON/WebGLUtils", "%COMMON/Stack"
             //Draw the markers
             this.drawMarkers(blackColor);
             //Draw the pointers
-            this.drawHourHand(blackColor);
-            this.drawMinHand(blackColor);
+            this.drawHand(blackColor, hourAngle, this.innerRadius / 15, this.innerRadius / 2);
+            this.drawHand(blackColor, minAngle, this.innerRadius / 15, this.innerRadius * 0.8);
+            //Draw the red inner most circle first
             this.drawSecHandCircle(redColor);
-            this.drawSecHand(redColor);
+            //Then draw the longest second hand
+            this.drawHand(redColor, secAngle, this.innerRadius / 30, this.innerRadius * 0.95);
             this.proj = gl_matrix_1.mat4.ortho(gl_matrix_1.mat4.create(), 0, this.dims[0], 0, this.dims[1], -1, 1);
             this.gl.viewport(0, 0, this.dims[0], this.dims[1]);
         }
-        drawSecHand(redColor) {
+        drawHand(color, angle, rectangleWidth, rectangleHeight) {
             this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
-            let rectangleWidth = this.innerRadius / 30;
-            let rectangleHeight = this.innerRadius * 0.95;
-            let date = new Date();
-            let sec = date.getSeconds() + date.getMilliseconds() / 1000;
-            //Create min hand
             this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
-            gl_matrix_1.mat4.rotate(this.modelView.peek(), this.modelView.peek(), -gl_matrix_1.glMatrix.toRadian(sec * 360.0 / 60), [0, 0, 1]);
+            gl_matrix_1.mat4.rotate(this.modelView.peek(), this.modelView.peek(), angle, [0, 0, 1]);
             gl_matrix_1.mat4.translate(this.modelView.peek(), this.modelView.peek(), [-rectangleWidth / 2, 0, 0]);
             gl_matrix_1.mat4.scale(this.modelView.peek(), this.modelView.peek(), [rectangleWidth, rectangleHeight, 1]);
-            let modelViewLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
-            this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
-            let colorLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
-            this.gl.uniform4fv(colorLocation, redColor);
-            this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_BYTE, this.numCircleIndices);
-            this.modelView.pop();
-        }
-        drawSecHandCircle(color) {
-            let r = this.innerRadius / 30;
-            this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
-            gl_matrix_1.mat4.scale(this.modelView.peek(), this.modelView.peek(), gl_matrix_1.vec3.fromValues(r, r, r));
             let modelViewLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
             this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
             let colorLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
             this.gl.uniform4fv(colorLocation, color);
-            //Draw with triangle fans
-            this.gl.drawElements(this.gl.TRIANGLE_FAN, this.numCircleIndices, this.gl.UNSIGNED_BYTE, 0);
-            this.modelView.pop();
-        }
-        drawMinHand(blackColor) {
-            let rectangleWidth = this.innerRadius / 15;
-            let rectangleHeight = this.innerRadius * 0.8;
-            let date = new Date();
-            let min = date.getMinutes() + date.getSeconds() / 60;
-            //Create min hand
-            this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
-            gl_matrix_1.mat4.rotate(this.modelView.peek(), this.modelView.peek(), -gl_matrix_1.glMatrix.toRadian(min * 360.0 / 60), [0, 0, 1]);
-            gl_matrix_1.mat4.translate(this.modelView.peek(), this.modelView.peek(), [-rectangleWidth / 2, 0, 0]);
-            gl_matrix_1.mat4.scale(this.modelView.peek(), this.modelView.peek(), [rectangleWidth, rectangleHeight, 1]);
-            let modelViewLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
-            this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
-            let colorLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
-            this.gl.uniform4fv(colorLocation, blackColor);
-            this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_BYTE, this.numCircleIndices);
-            this.modelView.pop();
-        }
-        drawHourHand(blackColor) {
-            //Get the hour and min and sec info from date
-            let date = new Date();
-            let hour = date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
-            let rectangleWidth = this.innerRadius / 15;
-            let rectangleHeight = this.innerRadius / 2;
-            //Create hour hand
-            this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
-            gl_matrix_1.mat4.rotate(this.modelView.peek(), this.modelView.peek(), -gl_matrix_1.glMatrix.toRadian(hour * 360.0 / 12), [0, 0, 1]);
-            gl_matrix_1.mat4.translate(this.modelView.peek(), this.modelView.peek(), [-rectangleWidth / 2, 0, 0]);
-            gl_matrix_1.mat4.scale(this.modelView.peek(), this.modelView.peek(), [rectangleWidth, rectangleHeight, 1]);
-            let modelViewLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
-            this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
-            let colorLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
-            this.gl.uniform4fv(colorLocation, blackColor);
             this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_BYTE, this.numCircleIndices);
             this.modelView.pop();
         }
@@ -201,6 +159,18 @@ define(["require", "exports", "gl-matrix", "%COMMON/WebGLUtils", "%COMMON/Stack"
         drawCircle(r, color) {
             this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
             ;
+            gl_matrix_1.mat4.scale(this.modelView.peek(), this.modelView.peek(), gl_matrix_1.vec3.fromValues(r, r, r));
+            let modelViewLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
+            this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
+            let colorLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
+            this.gl.uniform4fv(colorLocation, color);
+            //Draw with triangle fans
+            this.gl.drawElements(this.gl.TRIANGLE_FAN, this.numCircleIndices, this.gl.UNSIGNED_BYTE, 0);
+            this.modelView.pop();
+        }
+        drawSecHandCircle(color) {
+            let r = this.innerRadius / 30;
+            this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
             gl_matrix_1.mat4.scale(this.modelView.peek(), this.modelView.peek(), gl_matrix_1.vec3.fromValues(r, r, r));
             let modelViewLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
             this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
