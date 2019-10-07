@@ -87,21 +87,58 @@ define(["require", "exports", "gl-matrix", "%COMMON/WebGLUtils", "%COMMON/Stack"
             let clockColor = gl_matrix_1.vec4.fromValues(1, 1, 204 / 255, 1);
             let whiteColor = gl_matrix_1.vec4.fromValues(1, 1, 1, 1);
             let redColor = gl_matrix_1.vec4.fromValues(1, 0, 0, 1);
+            this.gl.useProgram(this.shaderProgram);
+            let projectionLocation = this.gl.getUniformLocation(this.shaderProgram, "proj");
+            this.gl.uniformMatrix4fv(projectionLocation, false, this.proj);
             this.modelView.push(gl_matrix_1.mat4.create());
+            //All the objets should be moved from middle of the canvas
+            gl_matrix_1.mat4.translate(this.modelView.peek(), this.modelView.peek(), gl_matrix_1.vec3.fromValues(this.dims[0] / 2, this.dims[1] / 2, 0));
             //Draw two circle, one bigger black at the back and one smaller at the front
             this.drawCircle(this.outerRadius, blackColor);
             this.drawCircle(this.innerRadius, clockColor);
             //Draw the markers
             this.drawMarkers(blackColor);
             //Draw the pointers
-            this.drawHourHand(blackColor, redColor);
+            this.drawHourHand(blackColor);
             this.drawMinHand(blackColor);
+            this.drawSecHandCircle(redColor);
+            this.drawSecHand(redColor);
             this.proj = gl_matrix_1.mat4.ortho(gl_matrix_1.mat4.create(), 0, this.dims[0], 0, this.dims[1], -1, 1);
             this.gl.viewport(0, 0, this.dims[0], this.dims[1]);
         }
+        drawSecHand(redColor) {
+            this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
+            let rectangleWidth = this.innerRadius / 30;
+            let rectangleHeight = this.innerRadius * 0.95;
+            let date = new Date();
+            let sec = date.getSeconds() + date.getMilliseconds() / 1000;
+            //Create min hand
+            this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
+            gl_matrix_1.mat4.rotate(this.modelView.peek(), this.modelView.peek(), -gl_matrix_1.glMatrix.toRadian(sec * 360.0 / 60), [0, 0, 1]);
+            gl_matrix_1.mat4.translate(this.modelView.peek(), this.modelView.peek(), [-rectangleWidth / 2, 0, 0]);
+            gl_matrix_1.mat4.scale(this.modelView.peek(), this.modelView.peek(), [rectangleWidth, rectangleHeight, 1]);
+            let modelViewLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
+            this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
+            let colorLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
+            this.gl.uniform4fv(colorLocation, redColor);
+            this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_BYTE, this.numCircleIndices);
+            this.modelView.pop();
+        }
+        drawSecHandCircle(color) {
+            let r = this.innerRadius / 30;
+            this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
+            gl_matrix_1.mat4.scale(this.modelView.peek(), this.modelView.peek(), gl_matrix_1.vec3.fromValues(r, r, r));
+            let modelViewLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
+            this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
+            let colorLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
+            this.gl.uniform4fv(colorLocation, color);
+            //Draw with triangle fans
+            this.gl.drawElements(this.gl.TRIANGLE_FAN, this.numCircleIndices, this.gl.UNSIGNED_BYTE, 0);
+            this.modelView.pop();
+        }
         drawMinHand(blackColor) {
             let rectangleWidth = this.innerRadius / 15;
-            let rectangleHeight = this.innerRadius * 0.9;
+            let rectangleHeight = this.innerRadius * 0.8;
             let date = new Date();
             let min = date.getMinutes() + date.getSeconds() / 60;
             //Create min hand
@@ -116,18 +153,10 @@ define(["require", "exports", "gl-matrix", "%COMMON/WebGLUtils", "%COMMON/Stack"
             this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_BYTE, this.numCircleIndices);
             this.modelView.pop();
         }
-        drawHourHand(blackColor, redColor) {
-            this.gl.useProgram(this.shaderProgram);
-            let projectionLocation = this.gl.getUniformLocation(this.shaderProgram, "proj");
-            this.gl.uniformMatrix4fv(projectionLocation, false, this.proj);
-            this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
-            gl_matrix_1.mat4.translate(this.modelView.peek(), this.modelView.peek(), gl_matrix_1.vec3.fromValues(this.dims[0] / 2, this.dims[1] / 2, 0));
+        drawHourHand(blackColor) {
             //Get the hour and min and sec info from date
             let date = new Date();
             let hour = date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
-            let min = date.getMinutes() + date.getSeconds() / 60;
-            let sec = date.getSeconds();
-            console.log(hour + " " + min + " " + sec + "\n");
             let rectangleWidth = this.innerRadius / 15;
             let rectangleHeight = this.innerRadius / 2;
             //Create hour hand
@@ -143,11 +172,6 @@ define(["require", "exports", "gl-matrix", "%COMMON/WebGLUtils", "%COMMON/Stack"
             this.modelView.pop();
         }
         drawMarkers(color) {
-            this.gl.useProgram(this.shaderProgram);
-            let projectionLocation = this.gl.getUniformLocation(this.shaderProgram, "proj");
-            this.gl.uniformMatrix4fv(projectionLocation, false, this.proj);
-            this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
-            gl_matrix_1.mat4.translate(this.modelView.peek(), this.modelView.peek(), gl_matrix_1.vec3.fromValues(this.dims[0] / 2, this.dims[1] / 2, 0));
             let rectangleWidth = 0;
             let rectangleHeight = 0;
             for (let i = 0; i < 60; i++) {
@@ -173,16 +197,11 @@ define(["require", "exports", "gl-matrix", "%COMMON/WebGLUtils", "%COMMON/Stack"
                 this.gl.drawElements(this.gl.TRIANGLE_STRIP, 4, this.gl.UNSIGNED_BYTE, this.numCircleIndices);
                 this.modelView.pop();
             }
-            this.modelView.pop();
         }
         drawCircle(r, color) {
             this.modelView.push(gl_matrix_1.mat4.clone(this.modelView.peek()));
             ;
-            gl_matrix_1.mat4.translate(this.modelView.peek(), this.modelView.peek(), gl_matrix_1.vec3.fromValues(this.dims[0] / 2, this.dims[1] / 2, 0));
             gl_matrix_1.mat4.scale(this.modelView.peek(), this.modelView.peek(), gl_matrix_1.vec3.fromValues(r, r, r));
-            this.gl.useProgram(this.shaderProgram);
-            let projectionLocation = this.gl.getUniformLocation(this.shaderProgram, "proj");
-            this.gl.uniformMatrix4fv(projectionLocation, false, this.proj);
             let modelViewLocation = this.gl.getUniformLocation(this.shaderProgram, "modelView");
             this.gl.uniformMatrix4fv(modelViewLocation, false, this.modelView.peek());
             let colorLocation = this.gl.getUniformLocation(this.shaderProgram, "vColor");
