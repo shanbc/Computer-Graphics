@@ -1,2 +1,7 @@
 node_modules
 HelloWebGL
+common
+PacMan
+Clock
+package-lock.json
+projects.code-workspace

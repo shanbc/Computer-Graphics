@@ -23,11 +23,16 @@ export namespace ScenegraphJSONImporter {
             let jsonTree: Object = JSON.parse(contents);
             let scenegraph = new Scenegraph<VertexType>();
             let root: SGNode;
+            let scaleInstances: boolean = true;
 
             if (!("instances" in jsonTree)) {
                 throw new Error("No meshes in the scene graph!");
             }
-            handleInstances(scenegraph, jsonTree["instances"], producer)
+            if ("scaleinstances" in jsonTree) {
+                if (jsonTree["scaleinstances"] == "false")
+                    scaleInstances = false;
+            }
+            handleInstances(scenegraph, jsonTree["instances"], scaleInstances, producer)
                 .then((scenegraph: Scenegraph<VertexType>) => {
                     if (!("root" in jsonTree)) {
                         throw new Error("No root in the scene graph!");
@@ -50,6 +55,9 @@ export namespace ScenegraphJSONImporter {
             throw new Error("No type of node!");
         }
 
+        if ("name" in obj) {
+            console.log("Processing: " + obj["name"]);
+        }
         switch (obj["type"]) {
             case "transform":
                 result = handleTransformNode(scenegraph, obj);
@@ -163,7 +171,7 @@ export namespace ScenegraphJSONImporter {
         return result;
     }
 
-    export function handleInstances<VertexType extends IVertexData>(scenegraph: Scenegraph<VertexType>, obj: Object, producer: VertexProducer<VertexType>): Promise<Scenegraph<VertexType>> {
+    export function handleInstances<VertexType extends IVertexData>(scenegraph: Scenegraph<VertexType>, obj: Object, scaleAndCenter: boolean, producer: VertexProducer<VertexType>): Promise<Scenegraph<VertexType>> {
         return new Promise<Scenegraph<VertexType>>((resolve) => {
             let nameUrls: Map<string, string> = new Map<string, string>();
             for (let n of Object.keys(obj)) {
@@ -172,7 +180,7 @@ export namespace ScenegraphJSONImporter {
             }
 
             //import them
-            ObjImporter.batchDownloadMesh(nameUrls, producer)
+            ObjImporter.batchDownloadMesh(nameUrls, producer, scaleAndCenter)
                 .then((meshMap: Map<string, Mesh.PolygonMesh<VertexType>>) => {
                     for (let [n, mesh] of meshMap) {
                         scenegraph.addPolygonMesh(n, mesh);

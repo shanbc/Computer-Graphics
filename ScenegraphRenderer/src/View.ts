@@ -37,6 +37,7 @@ export class View {
     private shaderLocations: ShaderLocationsVault;
 
     private time: number;
+    private viewType: number;
 
     constructor(gl: WebGLRenderingContext) {
         this.gl = gl;
@@ -45,7 +46,7 @@ export class View {
         this.scenegraph = null;
         //set the clear color
         this.gl.clearColor(0.9, 0.9, 0.7, 1);
-
+        this.viewType = 0;
 
         //Our quad is in the range (-100,100) in X and Y, in the "virtual world" that we are drawing. We must specify what part of this virtual world must be drawn. We do this via a projection matrix, set up as below. In this case, we are going to render the part of the virtual world that is inside a square from (-200,-200) to (200,200). Since we are drawing only 2D, the last two arguments are not useful. The default Z-value chosen is 0, which means we only specify the last two numbers such that 0 is within their range (in this case we have specified them as (-100,100))
         this.proj = mat4.ortho(mat4.create(), -100, 100, -100, 100, 0.1, 10000);
@@ -116,8 +117,7 @@ export class View {
               this.scenegraph.setRenderer(renderer);
           }); */
 
-        
-        ScenegraphJSONImporter.importJSON(new VertexPNTProducer(), this.jsonDoubleBoxes())
+        ScenegraphJSONImporter.importJSON(new VertexPNTProducer(), this.jsonHogwarts())
             .then((s: Scenegraph<VertexPNT>) => {
                 let shaderVarsToVertexAttribs: Map<string, string> = new Map<string, string>();
                 shaderVarsToVertexAttribs.set("vPosition", "position");
@@ -322,7 +322,7 @@ export class View {
             "type":"transform",
             "name": "box-transform",
             "transform": [
-                {"translate": [${tX},${tY},${tZ}]},
+                {"translate": [${tX + x / 2},${tY + y / 2},${tZ + z / 2}]},
                 {"scale": [${x},${y},${z}]}
             ],
             "child": {
@@ -335,13 +335,12 @@ export class View {
             }
         }`;
     }
-
     private createCone(x: number, y: number, z : number, tX: number, tY : number, tZ : number): string {
         return `{
             "type":"transform",
             "name": "cone-transform",
             "transform": [
-                {"translate": [${tX},${tY},${tZ}]},
+                {"translate": [${tX + x},${tY},${tZ + z}]},
                 {"scale": [${x},${y},${z}]}
             ],
             "child": {
@@ -360,7 +359,7 @@ export class View {
             "type":"transform",
             "name": "cylinder-transform",
             "transform": [
-                {"translate": [${tX},${tY},${tZ}]},
+                {"translate": [${tX + x},${tY},${tZ + z}]},
                 {"scale": [${x},${y},${z}]}
             ],
             "child": {
@@ -374,9 +373,8 @@ export class View {
         }`;
     }
 
-    private createTurrets(boxScaleX: number, boxScaleY: number, boxScaleZ: number,
-                            cylinderDiameter : number, cylinderScaleY: number,
-                            coneScaleX: number, coneScaleY: number, coneScaleZ: number,
+    private createTurrets(boxScaleX: number, boxScaleY: number, boxScaleZ: number, cylinderScaleX: number,
+         cylinderScaleY: number,  cylinderScaleZ: number, coneScaleX: number, coneScaleY: number, coneScaleZ: number,
                              tX: number, tY: number, tZ: number): string {
         return `{
             "type":"transform",
@@ -388,10 +386,9 @@ export class View {
                 "type": "group",
                 "children" : [
                     ${this.createBox(boxScaleX,boxScaleY,boxScaleZ,0,0,0)},
-                    ${this.createCylinder(cylinderDiameter,cylinderScaleY,cylinderDiameter,0,boxScaleY / 2 + cylinderScaleY / 2,0)},
+                    ${this.createCylinder(cylinderScaleX,cylinderScaleY,cylinderScaleZ,0,boxScaleY,0)},
                     ${this.createCone(coneScaleX,coneScaleY,coneScaleZ,0,boxScaleY + cylinderScaleY,0)}    
                 ]
-
             }
         }`;
     }
@@ -416,28 +413,47 @@ export class View {
             "root": {
                 "type": "group",
                 "name": "root",
-                "children": [${this.createTurrets(10, 50, 10, 10, 10, 10, 10, 10, 0,0,0)}]
+                "children": [${this.createTurrets(10, 50, 10, 10, 10, 10, 10, 10, 10, 0,0,0)}]
             }
         }
         `
     }
 
     private jsonHogwarts(): string {
-        let box1: string = this.createBox(50, 20, 10, 25, 0, -45 - 10);
-        let box2: string = this.createBox(20, 20, 10, 85, 0, -45 - 10);
-        let box3: string = this.createBox(20, 20, 10, 121,0,-45 - 10);
-        let box4: string = this.createBox(15, 20, 35, 5, 0, -10 - 35);
-        let box5: string = this.createBox(20, 20, 35, 20, 0, -10 - 35);
-        let box6: string = this.createBox(15, 20, 20, 40, 0, -10 - 20);
-        let box7: string = this.createBox(10, 20, 35, 55, 0, -10 - 35);
-        let box8: string = this.createBox(10, 20, 15, 65, 0, -20 - 15);
-        let box9: string = this.createBox(10, 20, 35, 75, 0, -10 - 35);
-        let box10: string = this.createBox(36, 20, 10, 85, 0, -22 - 10);
-        let box11: string = this.createBox(10, 20, 15, 131, 0, -22 - 15);
-        let box12: string = this.createBox(5, 20, 10, 10, 0, 0 - 10);
-        let box13: string = this.createBox(15, 20, 10, 25, 0, 0 - 10);
+        let box1: string = this.createBox(50, 20, -10, 25, 0, -45);
+        let box2: string = this.createBox(20, 20, -10, 85, 0, -45);
+        let box3: string = this.createBox(20, 20, -10, 121,0,-45);
+        let box4: string = this.createBox(15, 20, -35, 5, 0, -10);
+        let box5: string = this.createBox(20, 20, -35, 20, 0, -10);
+        let box6: string = this.createBox(15, 20, -20, 40, 0, -25);
+        let box7: string = this.createBox(10, 20, -35, 55, 0, -10);
+        let box8: string = this.createBox(10, 20, -15, 65, 0, -20);
+        let box9: string = this.createBox(10, 20, -35, 75, 0, -10);
+        let box10: string = this.createBox(36, 20, -10, 85, 0, -22);
+        let box11: string = this.createBox(10, 20, -15, 131, 0, -22);
+        let box12: string = this.createBox(5, 20, -10, 10, 0, 0);
+        let box13: string = this.createBox(15, 20, -10, 25, 0, 0);
+        let turret1: string = this.createTurrets(10, 50, -10, 5, 5, -5, 5, 10, -5, 0, 0, 0);
+        let turret2: string = this.createTurrets(10, 50, -10, 5, 5, -5, 5, 10, -5, 15, 0, 0);
+        let turret3: string = this.createTurrets(10, 50, -10, 5, 5, -5, 5, 10, -5, 75, 0, 0);
+        let turret4: string = this.createTurrets(15, 50, -15, 7.5, 10, -7.5, 7.5, 10, -7.5, 40, 0, -10);
+        let turret5: string = this.createTurrets(10, 50, -10, 5, 5, -5, 5, 10, -5, 65, 0, -10);
+        let turret6: string = this.createTurrets(10, 50, -10, 5, 5, -5, 5, 10, -5, 121, 0, -20);
+        let turret7: string = this.createTurrets(10, 50, -10, 5, 5, -5, 5, 10, -5, 65, 0, -35);
+        let turret8: string = this.createTurrets(10, 50, -10, 5, 5, -5, 5, 10, -5, 131, 0, -37);
+        let turret9: string = this.createTurrets(10, 50, -10, 5, 5, -5, 5, 10, -5, 75, 0, -45);
+        let turret10: string = this.createTurrets(0, 0, 0, 12.5, 40, -12.5, 12.5, 50, -12.5, 100.5, 0, -37.5);
+        let quadTurret1: string = this.createTurrets(25, 20, -25, 0, 0, 0, 0, 0, 0, 0, 0, -45);
+        let quadTurret2: string = this.createTurrets(0, 0, 0, 11, 25, -11, 0, 0, 0, 1.5, 20, -46.5);
+        let quadTurret3: string = this.createTurrets(0, 0, 0, 10, 40, -10, 10, 20, -10, 2.5, 45, -47.5);
+        let minirate1: string = this.createTurrets(0, 0, 0, 4, 30, -4, 4, 10, -4, 0, 30, -53);
+        let minirate2: string = this.createTurrets(0, 0, 0, 4, 30, -4, 4, 10, -4, 17, 30, -53);
+        let minirate3: string = this.createTurrets(0, 0, 0, 4, 30, -4, 4, 10, -4, 8.5, 30, -45);
+        let minirate4: string = this.createTurrets(0, 0, 0, 4, 30, -4, 4, 10, -4, 8.5, 30, -62);
+        //Create the custom quad-turret thingy.
         return `
         {
+            "scaleinstances":"false",
             "instances": [
                 {
                     "name":"box",
@@ -456,7 +472,10 @@ export class View {
                 "type": "group",
                 "name": "root",
                 "children": [${box1}, ${box2}, ${box3}, ${box4}, ${box5}, ${box6}, 
-                    ${box7}, ${box8}, ${box9}, ${box10}, ${box11}, ${box12}, ${box13}]
+                    ${box7}, ${box8}, ${box9}, ${box10}, ${box11}, ${box12}, ${box13},
+                    ${turret1}, ${turret2}, ${turret3}, ${turret4}, ${turret5}, ${turret6}, 
+                    ${turret7}, ${turret8}, ${turret9}, ${turret10}, ${quadTurret1}, ${quadTurret2}, ${quadTurret3}, ${minirate1},
+                    ${minirate2}, ${minirate3}, ${minirate4}]
             }
         }
         `
@@ -492,8 +511,29 @@ export class View {
          */
         this.modelview.push(mat4.create());
         this.modelview.push(mat4.clone(this.modelview.peek()));
-        mat4.lookAt(this.modelview.peek(), vec3.fromValues(100, 100, 160), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
 
+        document.addEventListener('keydown', (e) => {
+            if (e.code == "KeyT") {
+                this.viewType = 0;
+                //lert("T Pressed!");
+            }
+            else if (e.code == "KeyF") {
+                this.viewType = 1;
+            }
+            else if (e.code == "KeyO") {
+                this.viewType = 2;
+            }
+        });
+
+        if (this.viewType == 0) {
+            mat4.lookAt(this.modelview.peek(), vec3.fromValues(Math.sin(this.time * 0.01) * 200, 50, -Math.cos(this.time * 0.01) * 200), vec3.fromValues(75, 0, -35), vec3.fromValues(0, 1, 0));
+        }
+        else if (this.viewType == 1) {
+            mat4.lookAt(this.modelview.peek(), vec3.fromValues(100, 160, 150), vec3.fromValues(75, 0, -35), vec3.fromValues(0, 1, 0));
+        }
+        else {
+            mat4.lookAt(this.modelview.peek(), vec3.fromValues(75, 1200, 0), vec3.fromValues(75, 0, -1), vec3.fromValues(0, 1, 0));
+        }
 
         this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("proj"), false, this.proj);
 
