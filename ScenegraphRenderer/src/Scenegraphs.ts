@@ -1,6 +1,10 @@
 import { View } from "./View"
 import * as WebGLUtils from "%COMMON/WebGLUtils"
 import { Controller } from "./Controller";
+import { ObjImporter } from "%COMMON/ObjImporter";
+import { VertexPNTProducer, VertexPNT } from "./VertexPNT";
+import { Mesh } from "%COMMON/PolygonMesh";
+import { ObjModel } from "./ObjModel";
 
 var numFrames: number = 0;
 var lastTime: number = -1;
@@ -13,31 +17,38 @@ function main(): void {
     let view: View;
     let controller: Controller;
 
+    let producer: VertexPNTProducer = new VertexPNTProducer();
+    let model : ObjModel;
+
     window.onload = ev => {
-        console.log("Here I am");
+        let namesAndUrls: Map<string, string> = new Map<string, string>();
 
+        namesAndUrls.set("aeroplane", "models/aeroplane.obj");
+        ObjImporter.batchDownloadMesh(namesAndUrls, producer).then((inputMeshes: Map<string, Mesh.PolygonMesh<VertexPNT>>) => {
+            //retrieve <canvas> element
+            var canvas: HTMLCanvasElement = <HTMLCanvasElement>document.querySelector("#glCanvas");
+            if (!canvas) {
+                console.log("Failed to retrieve the <canvas> element");
+                return;
+            }
 
-        //retrieve <canvas> element
-        var canvas: HTMLCanvasElement = <HTMLCanvasElement>document.querySelector("#glCanvas");
-        if (!canvas) {
-            console.log("Failed to retrieve the <canvas> element");
-            return;
-        }
+            //get the rendering context for webgl
+            gl = WebGLUtils.setupWebGL(canvas, { 'antialias': false, 'alpha': false, 'depth': true, 'stencil': false });
 
-        //get the rendering context for webgl
-        gl = WebGLUtils.setupWebGL(canvas, { 'antialias': false, 'alpha': false, 'depth': true, 'stencil': false });
+            // Only continue if WebGL is available and working
+            if (gl == null) {
+                alert("Unable to initialize WebGL. Your browser or machine may not support it.");
+                return;
+            }
+            //create the view
+            view = new View(gl);
+            //load in the meshes we just read
+            view.setupScene(inputMeshes);
+            //create the model
+            model = new ObjModel();
+            controller = new Controller(model, view);
+            controller.go();
 
-        // Only continue if WebGL is available and working
-        if (gl == null) {
-            alert("Unable to initialize WebGL. Your browser or machine may not support it.");
-            return;
-        }
-        console.log("Window loaded");
-        view = new View(gl);
-
-
-        controller = new Controller(view);
-        controller.go();
 
         var tick = function () {
             if (lastTime == -1) {
@@ -51,7 +62,12 @@ function main(): void {
                 document.getElementById('frameratedisplay').innerHTML = "Frame rate: " + frameRate.toFixed(1);
                 numFrames = 0;
             }
-            view.animate();
+            fetch("src/camerapath.txt")
+            .then(response => response.text())
+            .then(data => {
+                view.animate(data);
+                console.log(data);
+            });
             view.draw();
 
             //this line sets up the animation
@@ -60,9 +76,10 @@ function main(): void {
 
         //call tick the first time
         tick();
-    };
+    });
 
     window.onbeforeunload = ev => view.freeMeshes();
+    }
 }
 
 function init(gl: WebGLRenderingContext) {

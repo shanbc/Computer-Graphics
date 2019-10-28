@@ -18,7 +18,7 @@ export class Scenegraph<VertexType extends IVertexData> {
     protected root: SGNode;
 
     /**
-     * A map to store the (name,mesh) pairs. A map is chosen for efficient search
+     * A .p to store the (name,mesh) pairs. A map is chosen for efficient search
      */
     protected meshes: Map<string, Mesh.PolygonMesh<VertexType>>;
 

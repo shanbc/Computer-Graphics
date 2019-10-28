@@ -14,7 +14,8 @@ import { TransformNode } from "./TransformNode";
 import { SGNode } from "SGNode";
 import { Material } from "%COMMON/Material";
 import { GroupNode } from "./GroupNode";
-
+import { MeshProperties} from "./meshProperties";
+import { RenderableMesh } from "%COMMON/RenderableMesh";
 
 /**
  * This class encapsulates the "view", where all of our WebGL code resides. This class, for now, also stores all the relevant data that is used to draw. This can be replaced with a more formal Model-View-Controller architecture with a bigger application.
@@ -35,15 +36,21 @@ export class View {
 
     private scenegraph: Scenegraph<VertexPNT>;
     private shaderLocations: ShaderLocationsVault;
+    private meshProperties: Map<string, MeshProperties>;
+    private renderableMeshes: Map<string, RenderableMesh<VertexPNT>>;
 
     private time: number;
     private viewType: number;
+    private cameraPath: string;
+    private frame: number = 0;
 
     constructor(gl: WebGLRenderingContext) {
         this.gl = gl;
         this.time = 0;
         this.modelview = new Stack<mat4>();
         this.scenegraph = null;
+        this.renderableMeshes = new Map<string, RenderableMesh<VertexPNT>>();
+        this.meshProperties = new Map<string, MeshProperties>();
         //set the clear color
         this.gl.clearColor(0.9, 0.9, 0.7, 1);
         this.viewType = 0;
@@ -53,8 +60,8 @@ export class View {
 
         //We must also specify "where" the above part of the virtual world will be shown on the actual canvas on screen. This part of the screen where the above drawing gets pasted is called the "viewport", which we set here. The origin of the viewport is left,bottom. In this case we want it to span the entire canvas, so we start at (0,0) with a width and height of 400 each (matching the dimensions of the canvas specified in HTML)
         this.gl.viewport(0, 0, 400, 400);
+        //console.log(this.cameraPath);
     }
-
 
 
     public initShaders(vShaderSource: string, fShaderSource: string) {
@@ -393,32 +400,6 @@ export class View {
         }`;
     }
 
-    private jsonDoubleBoxes(): string {
-        return `
-        {
-            "instances": [
-                {
-                    "name":"box",
-                    "path":"models/box.obj"
-                },
-                {
-                    "name":"cylinder",
-                    "path":"models/cylinder.obj"
-                },
-                {
-                    "name":"cone",
-                    "path":"models/cone.obj"
-                }
-            ],
-            "root": {
-                "type": "group",
-                "name": "root",
-                "children": [${this.createTurrets(10, 50, 10, 10, 10, 10, 10, 10, 10, 0,0,0)}]
-            }
-        }
-        `
-    }
-
     private jsonHogwarts(): string {
         let box1: string = this.createBox(50, 20, -10, 25, 0, -45);
         let box2: string = this.createBox(20, 20, -10, 85, 0, -45);
@@ -466,6 +447,10 @@ export class View {
                 {
                     "name":"cone",
                     "path":"models/cone.obj"
+                },
+                {
+                    "name":"aeroplane",
+                    "path":"models/aeroplane.obj"
                 }
             ],
             "root": {
@@ -481,8 +466,15 @@ export class View {
         `
     }
 
-    public animate(): void {
+    public animate(s: string): void {
+        //console.log(s);
         this.time += 1;
+        let maxFrame: number = parseInt(s.substring(0, 4));
+        this.frame = (this.frame + 1) % maxFrame;
+
+        //console.log(this.getCoordinatesFromLine(this.getLineFromFrame(this.frame, s)));
+        this.placeAeroplaneAtCoord(this.getCoordinatesFromLine(this.getLineFromFrame(this.frame, s)));
+
         if (this.scenegraph != null) {
             this.scenegraph.animate(this.time);
         }
@@ -538,8 +530,52 @@ export class View {
         this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("proj"), false, this.proj);
 
 
+        for (let [key, value] of this.meshProperties) {
+            //save the current modelview
+            this.modelview.push(mat4.clone(this.modelview.peek()));
 
+            mat4.multiply(this.modelview.peek()
+                , this.modelview.peek()
+                , value.getAnimationTransform());
+
+            mat4.multiply(this.modelview.peek()
+                , this.modelview.peek()
+                , value.getTransform());
+
+            //The total transformation is whatever was passed to it, with its own transformation
+            let modelviewLocation: WebGLUniformLocation = this.shaderLocations.getUniformLocation("modelview");
+            this.gl.uniformMatrix4fv(modelviewLocation, false, this.modelview.peek());
+
+            //set the color for all vertices to be drawn for this object
+            let colorLocation: WebGLUniformLocation = this.shaderLocations.getUniformLocation("vColor");
+            this.gl.uniform4fv(colorLocation, value.getColor());
+            this.renderableMeshes.get(value.getType()).draw(this.shaderLocations);
+
+            this.modelview.pop();
+        }
+        this.modelview.pop();
         this.scenegraph.draw(this.modelview);
+    }
+
+    public getLineFromFrame(frame: number, coords: string): string {
+        let lines: string[] = coords.split(/\r?\n/);
+        return lines[frame];
+    }
+
+    public getCoordinatesFromLine(line: string): number[] {
+        let lines: string[] = line.split(" ");
+        let coords: number[] = [];
+        for (let i: number = 0; i < lines.length; i++) {
+            coords[i] = parseFloat(lines[i]);
+        }
+        return coords;
+    }
+
+    public placeAeroplaneAtCoord(coord: number[]): void {
+        let animationTransform: mat4;
+
+        animationTransform = mat4.create();
+        
     }
 
     public freeMeshes(): void {
@@ -548,5 +584,41 @@ export class View {
 
     public setFeatures(features: Features): void {
     }
+
+
+    public setupScene(inputMeshes: Map<string, Mesh.PolygonMesh<VertexPNT>>): void {
+        let transform: mat4;
+        let animationTransform: mat4;
+        let color: vec4;
+        let shaderVarsToAttributes = new Map<string, string>();
+
+        shaderVarsToAttributes.set("vPosition", "position");
+
+        //convert all meshes to wireframe and into renderable meshes
+        for (let [n, mesh] of inputMeshes) {
+            //convert into canonical form
+            //now convert to wireframe
+            let wireframeMesh: Mesh.PolygonMesh<VertexPNT> = mesh.convertToWireframe();
+            //finally create buffers for rendering 
+            let renderableMesh: RenderableMesh<VertexPNT> = new RenderableMesh<VertexPNT>(this.gl, n);
+            renderableMesh.initMeshForRendering(shaderVarsToAttributes, wireframeMesh);
+            this.renderableMeshes.set(n, renderableMesh);
+
+        }
+
+        
+
+        //aeroplane
+        color = vec4.fromValues(1, 1, 0, 1);
+        transform = mat4.create();
+        mat4.rotate(transform, transform, glMatrix.toRadian(90), vec3.fromValues(1, 0, 0));
+        mat4.scale(transform, transform, vec3.fromValues(100, 100, 100));
+        mat4.rotate(transform, transform, glMatrix.toRadian(180), vec3.fromValues(0, 1, 0));
+        mat4.translate(transform, transform, vec3.fromValues(0, -0.5, 0));
+
+        animationTransform = mat4.create();
+        this.meshProperties.set('aeroplane', new MeshProperties('aeroplane', color, transform, animationTransform));
+    }
+
 
 }

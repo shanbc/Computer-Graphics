@@ -1,48 +1,50 @@
 import { View } from "View"
-import * as OBJ from "webgl-obj-loader"
-import { mat4 } from "gl-matrix"
-import { Material } from "%COMMON/Material"
+import { ObjModel } from "ObjModel"
 
+/**
+ * This interface represents all the functions that the view can call. All callback functions for various UI elements go here
+ */
 export interface Features {
+    keyPress(keyEvent: string): void;
 }
+
+/**
+ * This class represents the controller of our web application. It provides all the callbacks 
+ * listed above
+ */
 export class Controller implements Features {
     private view: View;
+    private model: ObjModel;
 
-    constructor(view: View) {
+    constructor(model: ObjModel, view: View) {
+        this.model = model;
         this.view = view;
         this.view.setFeatures(this);
     }
 
+    /**
+     * This function is called at the beginning of the web application (see ObjViewer.ts) to give 
+     * control of the application to the controller.
+     */
     public go(): void {
-        this.view.initShaders(this.getVShader(), this.getFShader());
+        //get the shaders from the model and pass it to the WebGL-specific view 
+        this.view.initShaders(this.model.getVShader(), this.model.getFShader());
+        //the view is now ready to draw
         this.view.initScenegraph();
         this.view.draw();
     }
 
-    private getVShader(): string {
-        return `attribute vec4 vPosition;
-        uniform vec4 vColor;
-        uniform mat4 proj;
-        uniform mat4 modelview;
-        varying vec4 outColor;
-        
-        void main()
-        {
-            gl_Position = proj * modelview * vPosition;
-            outColor = vColor;
+
+    public keyPress(keyEvent: string): void {
+        switch (keyEvent) {
+            case "KeyG":
+                //this.view.setGlobal();
+                break;
+            case "KeyF":
+                //this.view.setFirstPerson();
+                break;
         }
-        `;
     }
 
-    private getFShader(): string {
-        return `precision mediump float;
-        varying vec4 outColor;
-    
-        void main()
-        {
-            gl_FragColor = outColor;
-        }
-        `;
-    }
 
 }

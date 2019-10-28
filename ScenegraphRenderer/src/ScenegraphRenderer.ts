@@ -105,7 +105,7 @@ export class ScenegraphRenderer {
      * @param transformation
      */
     public drawMesh(meshName: string, material: Material, textureName: string, transformation: mat4) {
-        console.log("Mesh name: " + meshName);
+        //console.log("Mesh name: " + meshName);
         if (this.meshRenderers.has(meshName)) {
             //get the color
 
