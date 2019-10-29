@@ -473,7 +473,7 @@ export class View {
         this.frame = (this.frame + 1) % maxFrame;
 
         //console.log(this.getCoordinatesFromLine(this.getLineFromFrame(this.frame, s)));
-        this.placeAeroplaneAtCoord(this.getCoordinatesFromLine(this.getLineFromFrame(this.frame, s)));
+        this.placeAeroplaneAtCoord(this.getCoordinatesFromLine(this.getLineFromFrame(this.frame, s)), this.getCoordinatesFromLine(this.getLineFromFrame((this.frame + 1) % maxFrame, s)));
 
         if (this.scenegraph != null) {
             this.scenegraph.animate(this.time);
@@ -512,7 +512,7 @@ export class View {
             //TODO : should modify this method
             mat4.lookAt(this.modelview.peek(), vec3.fromValues(75, 1200, 0), vec3.fromValues(75, 0, -1), vec3.fromValues(0, 1, 0));
         }
-        console.log(this.viewType)
+        //console.log(this.viewType)
 
         this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("proj"), false, this.proj);
 
@@ -573,11 +573,18 @@ export class View {
         return coords;
     }
 
-    public placeAeroplaneAtCoord(coord: number[]): void {
+    public placeAeroplaneAtCoord(coord: number[], nextCoord: number[]): void {
         let animationTransform: mat4;
-
         animationTransform = mat4.create();
+        mat4.translate(animationTransform, animationTransform, vec3.fromValues(coord[0], coord[1], coord[2]));
         
+        mat4.rotateX(animationTransform, animationTransform, coord[3]);
+        mat4.rotateY(animationTransform, animationTransform, coord[4]);
+        mat4.rotateZ(animationTransform, animationTransform, coord[5]);
+        
+        //mat4.rotate(animationTransform, animationTransform, Math.tan((nextCoord[0] - coord[0])/(nextCoord[1] - coord[1])), vec3.fromValues(coord[0], coord[1], coord[2]));
+
+        this.meshProperties.get("aeroplane").setAnimationTransform(animationTransform);
     }
 
     public freeMeshes(): void {
@@ -618,10 +625,9 @@ export class View {
         //aeroplane
         color = vec4.fromValues(1, 1, 0, 1);
         transform = mat4.create();
-        mat4.rotate(transform, transform, glMatrix.toRadian(90), vec3.fromValues(1, 0, 0));
-        mat4.scale(transform, transform, vec3.fromValues(100, 100, 100));
-        mat4.rotate(transform, transform, glMatrix.toRadian(180), vec3.fromValues(0, 1, 0));
-        mat4.translate(transform, transform, vec3.fromValues(0, -0.5, 0));
+        mat4.rotateX(transform, transform,glMatrix.toRadian(90));
+        mat4.scale(transform, transform, vec3.fromValues(10, 10, 10));
+        mat4.rotateY(transform, transform,glMatrix.toRadian(-180));
 
         animationTransform = mat4.create();
         this.meshProperties.set('aeroplane', new MeshProperties('aeroplane', color, transform, animationTransform));
