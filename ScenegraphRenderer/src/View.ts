@@ -496,26 +496,8 @@ export class View {
         while (!this.modelview.isEmpty())
             this.modelview.pop();
 
-        /*
-         *In order to change the shape of this triangle, we can either move the vertex positions above, or "transform" them
-         * We use a modelview matrix to store the transformations to be applied to our triangle.
-         * Right now this matrix is identity, which means "no transformations"
-         */
         this.modelview.push(mat4.create());
         this.modelview.push(mat4.clone(this.modelview.peek()));
-
-        document.addEventListener('keydown', (e) => {
-            if (e.code == "KeyT") {
-                this.viewType = 0;
-                //lert("T Pressed!");
-            }
-            else if (e.code == "KeyF") {
-                this.viewType = 1;
-            }
-            else if (e.code == "KeyO") {
-                this.viewType = 2;
-            }
-        });
 
         if (this.viewType == 0) {
             mat4.lookAt(this.modelview.peek(), vec3.fromValues(Math.sin(this.time * 0.01) * 200, 50, -Math.cos(this.time * 0.01) * 200), vec3.fromValues(75, 0, -35), vec3.fromValues(0, 1, 0));
@@ -523,12 +505,18 @@ export class View {
         else if (this.viewType == 1) {
             mat4.lookAt(this.modelview.peek(), vec3.fromValues(100, 160, 150), vec3.fromValues(75, 0, -35), vec3.fromValues(0, 1, 0));
         }
-        else {
+        else if (this.viewType == 2) {
             mat4.lookAt(this.modelview.peek(), vec3.fromValues(75, 1200, 0), vec3.fromValues(75, 0, -1), vec3.fromValues(0, 1, 0));
         }
+        else {
+            //TODO : should modify this method
+            mat4.lookAt(this.modelview.peek(), vec3.fromValues(75, 1200, 0), vec3.fromValues(75, 0, -1), vec3.fromValues(0, 1, 0));
+        }
+        console.log(this.viewType)
 
         this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("proj"), false, this.proj);
 
+        this.scenegraph.draw(this.modelview);
 
         for (let [key, value] of this.meshProperties) {
             //save the current modelview
@@ -554,8 +542,22 @@ export class View {
             this.modelview.pop();
         }
         this.modelview.pop();
-        this.scenegraph.draw(this.modelview);
+        
     }
+
+    public  setTPerspective() : void{
+        this.viewType = 0;
+    }
+
+    public setFPerspective() : void{
+        this.viewType = 1;
+    }
+    
+    public setOPerspective() : void{
+        this.viewType = 2;
+    }
+        
+    
 
     public getLineFromFrame(frame: number, coords: string): string {
         let lines: string[] = coords.split(/\r?\n/);
@@ -582,7 +584,12 @@ export class View {
         this.scenegraph.dispose();
     }
 
+    /**
+     * this sets up the callbacks for the button used to load a new mesh
+     * @param features 
+     */
     public setFeatures(features: Features): void {
+        window.addEventListener("keydown", ev => features.keyPress(ev.code));
     }
 
 

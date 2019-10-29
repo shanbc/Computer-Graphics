@@ -37,12 +37,21 @@ export class Controller implements Features {
 
     public keyPress(keyEvent: string): void {
         switch (keyEvent) {
-            case "KeyG":
-                //this.view.setGlobal();
+            case "KeyF": {
+                this.view.setFPerspective();
+                console.log('keyPressedF');
                 break;
-            case "KeyF":
-                //this.view.setFirstPerson();
+            }
+            case "keyT": {
+                this.view.setTPerspective();
+                console.log('keyPressedT');
                 break;
+            }
+            case "keyO": {
+                this.view.setOPerspective();
+                console.log('keyPressedO');
+                break;
+            }
         }
     }
 
