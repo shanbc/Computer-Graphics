@@ -60,7 +60,12 @@ export class Controller implements Features {
     // }
 
     public keyPress(keyEvent: string): void {
-        switch (keyEvent) {
+        switch (keyEvent) {       
+            case "keyA": {
+                this.view.setAPerspective();
+                console.log("U pressed A");
+                break;
+            }
             case "KeyF": {
                 this.view.setFPerspective();
                 console.log('keyPressedF');
