@@ -66,9 +66,10 @@ function main(): void {
             .then(response => response.text())
             .then(data => {
                 view.animate(data);
+                view.setData(data);
                 //console.log(data);
             });
-            //view.draw();
+            view.draw();
 
             //this line sets up the animation
             requestAnimationFrame(tick);

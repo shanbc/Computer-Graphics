@@ -34,38 +34,13 @@ export class Controller implements Features {
         this.view.draw();
     }
 
-
-    // public keyPress(keyEvent: string): void {
-    //     if (keyEvent == "keyF") {
-    //         this.view.setTPerspective();
-    //             console.log('keyPressedT');
-    //     }
-    //     switch (keyEvent) {
-    //         case "keyT": {
-    //             this.view.setTPerspective();
-    //             console.log('keyPressedT');
-    //             break;
-    //         }
-    //         case "keyO": {
-    //             this.view.setOPerspective();
-    //             console.log('keyPressedO');
-    //             break;
-    //         }
-    //         case "KeyF": {
-    //             this.view.setFPerspective();
-    //             console.log('keyPressedF');
-    //             break;
-    //         }
-    //     }
-    // }
-
     public keyPress(keyEvent: string): void {
         switch (keyEvent) {       
-            case "keyA": {
-                this.view.setAPerspective();
-                console.log("U pressed A");
-                break;
-            }
+            // case "keyA": {
+            //     this.view.setAPerspective();
+            //     console.log("U pressed A");
+            //     break;
+            // }
             case "KeyF": {
                 this.view.setFPerspective();
                 console.log('keyPressedF');
@@ -81,8 +56,11 @@ export class Controller implements Features {
                 console.log("U Pressed T");
                 break;
             }
+            case "KeyA": {
+                this.view.setAPerspective();
+                console.log("U Pressed A");
+                break;
+            }
         }
     }
-
-
 }

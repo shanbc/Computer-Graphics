@@ -43,6 +43,8 @@ export class View {
     private viewType: number;
     private cameraPath: string;
     private frame: number = 0;
+    private data : string = "";
+    private maxFrame : number = 0;
 
     constructor(gl: WebGLRenderingContext) {
         this.gl = gl;
@@ -469,11 +471,11 @@ export class View {
     public animate(s: string): void {
         //console.log(s);
         this.time += 1;
-        let maxFrame: number = parseInt(s.substring(0, 4));
-        this.frame = (this.frame + 1) % maxFrame;
+        this.maxFrame = parseInt(s.substring(0, 4));
+        this.frame = (this.frame + 1) % this.maxFrame;
 
         //console.log(this.getCoordinatesFromLine(this.getLineFromFrame(this.frame, s)));
-        this.placeAeroplaneAtCoord(this.getCoordinatesFromLine(this.getLineFromFrame(this.frame, s)), this.getCoordinatesFromLine(this.getLineFromFrame((this.frame + 1) % maxFrame, s)));
+        this.placeAeroplaneAtCoord(this.getCoordinatesFromLine(this.getLineFromFrame(this.frame, s)), this.getCoordinatesFromLine(this.getLineFromFrame((this.frame + 1), s)));
 
         if (this.scenegraph != null) {
             this.scenegraph.animate(this.time);
@@ -513,7 +515,11 @@ export class View {
             mat4.lookAt(this.modelview.peek()
                 , vec3.fromValues(0, 0, -0.5)
                 , vec3.fromValues(0, 0, 0)
-                , vec3.fromValues(0, 0.902861, 0.429934));
+                , vec3.fromValues(this.getCoordinatesFromLine(this.getLineFromFrame(this.time,this.data))[3],
+                        this.getCoordinatesFromLine(this.getLineFromFrame(this.time,this.data))[4], 
+                        this.getCoordinatesFromLine(this.getLineFromFrame(this.time,this.data))[5]));
+            //console.log(this.getCoordinatesFromLine(this.getLineFromFrame(this.time,this.data)));
+
             let aeroPlaneInverse: mat4 = mat4.create();
             mat4.invert(aeroPlaneInverse, this.meshProperties.get("aeroplane").getAnimationTransform());
             mat4.multiply(this.modelview.peek(), this.modelview.peek(), aeroPlaneInverse);
@@ -553,6 +559,9 @@ export class View {
         this.modelview.pop();
         
     }
+    public setData(s : string) : void {
+        this.data = s;
+    }
 
     public  setTPerspective() : void{
         this.viewType = 0;
@@ -572,7 +581,8 @@ export class View {
 
     public getLineFromFrame(frame: number, coords: string): string {
         let lines: string[] = coords.split(/\r?\n/);
-        return lines[frame];
+        let num : number = frame % this.maxFrame;
+        return lines[num];
     }
 
     public getCoordinatesFromLine(line: string): number[] {
@@ -588,17 +598,13 @@ export class View {
         let animationTransform: mat4;
         animationTransform = mat4.create();
         mat4.translate(animationTransform, animationTransform, vec3.fromValues(coord[0], coord[1], coord[2]));
-        //ax = atan2(sqrt(y^2+z^2),x);
 
-        let angleX : number = Math.atan2((nextCoord[1] - coord[1]), (nextCoord[0] - coord[0])) % Math.PI;
-        let angleZ : number = Math.atan2((nextCoord[2] - coord[2]), (nextCoord[1] - coord[1])) % Math.PI;
+        let angleZ : number = Math.atan2((nextCoord[1] - coord[1]), (nextCoord[0] - coord[0])) % Math.PI;
+        let angleX : number = Math.atan2((nextCoord[2] - coord[2]), (nextCoord[1] - coord[1])) % Math.PI;
         let angleY : number = Math.atan2((nextCoord[0] - coord[0]), (nextCoord[2] - coord[2])) % Math.PI ;
-        //let angleY : number = Math.tan((nextCoord[1] - coord[1])/(nextCoord[2] - coord[2])) % Math.PI;
-        //let angleZ : number = Math.tan((nextCoord[2] - coord[2])/(nextCoord[0] - coord[0])) % Math.PI;
-        console.log(angleY);
-        //mat4.rotateX(animationTransform,animationTransform,angleX);
-        mat4.rotateY(animationTransform,animationTransform, angleY);
-        //mat4.rotateZ(animationTransform,animationTransform,angleZ);
+        //mat4.rotateX(animationTransform,animationTransform, angleX - Math.PI / 2 );
+        mat4.rotateY(animationTransform,animationTransform,angleY);
+        mat4.rotateZ(animationTransform,animationTransform, angleZ);
                 
 
 
@@ -647,7 +653,9 @@ export class View {
         transform = mat4.create();
         mat4.rotate(transform, transform, glMatrix.toRadian(90), vec3.fromValues(1, 0, 0));
         mat4.scale(transform, transform, vec3.fromValues(10, 10, 10));
+        mat4.translate(transform, transform, vec3.fromValues(0, -0.5, 0));
         mat4.rotate(transform, transform, glMatrix.toRadian(180), vec3.fromValues(0, 1, 0));
+        mat4.rotate(transform,transform, glMatrix.toRadian(0), vec3.fromValues(0,0,1));
         //mat4.translate(transform, transform, vec3.fromValues(0, -0.5, 0));
 
         animationTransform = mat4.create();
