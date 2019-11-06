@@ -27,10 +27,14 @@ export class Controller implements Features {
      * control of the application to the controller.
      */
     public go(): void {
+        let numLights : number;
+        numLights = this.view.getNumberOfLights();
         //get the shaders from the model and pass it to the WebGL-specific view 
-        this.view.initShaders(this.model.getVShader(), this.model.getFShader());
+        this.view.initShaders(this.model.getPhongVShader(), this.model.getPhongFShader(numLights));
+        //this.view.initShaders(this.model.getVShader(), this.model.getFShader());
         //the view is now ready to draw
         this.view.initScenegraph();
+        this.view.initRendering();
         this.view.draw();
     }
 

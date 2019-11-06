@@ -104,14 +104,17 @@ export class ScenegraphRenderer {
      * @param material
      * @param transformation
      */
-    public drawMesh(meshName: string, material: Material, textureName: string, transformation: mat4) {
+    public drawMesh(meshName: string, material: Material, transformation: mat4) {
         //console.log("Mesh name: " + meshName);
         if (this.meshRenderers.has(meshName)) {
             //get the color
-
-            let loc: WebGLUniformLocation = this.shaderLocations.getUniformLocation("vColor");
+            //I have modified this to work with three material self light
+            let loc: WebGLUniformLocation = this.shaderLocations.getUniformLocation("material.diffuse");
             //set the color for all vertices to be drawn for this object
-            let color: vec4 = vec4.fromValues(material.getAmbient()[0], material.getAmbient()[1], material.getAmbient()[2], 1);
+            let color: vec4 = vec4.fromValues(material.getDiffuse()[0], material.getDiffuse()[1], material.getDiffuse()[2], 1);
+            
+            
+
             this.gl.uniform4fv(loc, color);
 
             loc = this.shaderLocations.getUniformLocation("modelview");

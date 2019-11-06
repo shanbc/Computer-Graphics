@@ -15,10 +15,49 @@ import { SGNode } from "SGNode";
 import { Material } from "%COMMON/Material";
 import { GroupNode } from "./GroupNode";
 import { RenderableMesh } from "%COMMON/RenderableMesh";
+import { IVertexData } from "%COMMON/IVertexData";
+import { Light } from "%COMMON/Light";
 
 /**
  * This class encapsulates the "view", where all of our WebGL code resides. This class, for now, also stores all the relevant data that is used to draw. This can be replaced with a more formal Model-View-Controller architecture with a bigger application.
  */
+class RenderableMeshInfo {
+    renderableMesh: RenderableMesh<IVertexData>;
+    transform: mat4;
+    material: Material;
+
+    constructor(mesh: RenderableMesh<IVertexData>, transform: mat4, material: Material) {
+        this.renderableMesh = mesh;
+        this.transform = transform;
+        this.material = material;
+
+    }
+}
+
+class MeshInfo {
+    mesh: Mesh.PolygonMesh<IVertexData>;
+    transform: mat4;
+    material: Material;
+
+    constructor(mesh: Mesh.PolygonMesh<IVertexData>, transform: mat4, material: Material) {
+        this.mesh = mesh;
+        this.transform = transform;
+        this.material = material;
+
+    }
+}
+
+enum LightCoordinateSystem { View, World, Object };
+
+class LightInfo {
+    light: Light;
+    coordinateSystem: LightCoordinateSystem;
+
+    constructor(light: Light, coordinateSystem: LightCoordinateSystem) {
+        this.light = light;
+        this.coordinateSystem = coordinateSystem;
+    }
+}
 
 
 export class View {
@@ -35,7 +74,6 @@ export class View {
 
     private scenegraph: Scenegraph<VertexPNT>;
     private shaderLocations: ShaderLocationsVault;
-    private renderableMeshes: Map<string, RenderableMesh<VertexPNT>>;
 
     private time: number;
     private viewType: number;
@@ -44,12 +82,17 @@ export class View {
     private data : string = "";
     private maxFrame : number = 0;
 
+
+    private lights : LightInfo[];
+    private shaderVarsToAttributes: Map<string, string>;
+    private renderableMeshes: RenderableMeshInfo[];
+    private meshes: MeshInfo[];
+
     constructor(gl: WebGLRenderingContext) {
         this.gl = gl;
         this.time = 0;
         this.modelview = new Stack<mat4>();
         this.scenegraph = null;
-        this.renderableMeshes = new Map<string, RenderableMesh<VertexPNT>>();
         //set the clear color
         this.gl.clearColor(0.9, 0.9, 0.7, 1);
         this.viewType = 0;
@@ -60,6 +103,29 @@ export class View {
         //We must also specify "where" the above part of the virtual world will be shown on the actual canvas on screen. This part of the screen where the above drawing gets pasted is called the "viewport", which we set here. The origin of the viewport is left,bottom. In this case we want it to span the entire canvas, so we start at (0,0) with a width and height of 400 each (matching the dimensions of the canvas specified in HTML)
         this.gl.viewport(0, 0, 400, 400);
         //console.log(this.cameraPath);
+
+        this.renderableMeshes = [];
+        this.meshes = [];
+
+        //Initialize the light
+        this.initLights();
+    }
+
+    private initLights(): void {
+        this.lights = [];
+        //This global light may not be used
+        
+        let l: Light = new Light();
+        l.setAmbient([0.8, 0.8, 0.8]);
+        l.setDiffuse([0.5, 0.5, 0.5]);
+        l.setSpecular([0.5, 0.5, 0.5]);
+        l.setPosition([0, 0, 100]);
+        this.lights.push(new LightInfo(l, LightCoordinateSystem.World));
+        
+    }
+
+    public getNumberOfLights() : number {
+        return this.lights.length;
     }
 
 
@@ -70,7 +136,17 @@ export class View {
         this.gl.useProgram(this.shaderProgram);
 
         this.shaderLocations = new ShaderLocationsVault(this.gl, this.shaderProgram);
+    }
 
+    public initRendering() {
+        this.renderableMeshes = [];
+        this.meshes.forEach((meshInfo: MeshInfo) => {
+            let rMesh: RenderableMesh<IVertexData> = new RenderableMesh<IVertexData>(this.gl, "");
+            rMesh.initMeshForRendering(this.shaderVarsToAttributes, meshInfo.mesh);
+
+            this.renderableMeshes.push(new RenderableMeshInfo(rMesh, meshInfo.transform, meshInfo.material));
+        }
+        );
     }
 
     public initScenegraph(): void {
@@ -132,8 +208,6 @@ export class View {
                 this.scenegraph.setRenderer(renderer);
             });
         //set it up
-
-
     }
 
     //a JSON representation of a jack-in-the-box
@@ -548,8 +622,9 @@ export class View {
             mat4.lookAt(this.modelview.peek(), vec3.fromValues(Math.sin(this.time * 0.01) * 200, 50, -Math.cos(this.time * 0.01) * 200), vec3.fromValues(75, 0, -35), vec3.fromValues(0, 1, 0));
         }
         //console.log(this.viewType)
+        console.log(this.shaderLocations);
 
-        this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("proj"), false, this.proj);
+        this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("projection"), false, this.proj);
 
         this.scenegraph.draw(this.modelview);
 
