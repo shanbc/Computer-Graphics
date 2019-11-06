@@ -14,7 +14,6 @@ import { TransformNode } from "./TransformNode";
 import { SGNode } from "SGNode";
 import { Material } from "%COMMON/Material";
 import { GroupNode } from "./GroupNode";
-import { MeshProperties} from "./meshProperties";
 import { RenderableMesh } from "%COMMON/RenderableMesh";
 
 /**
@@ -36,7 +35,6 @@ export class View {
 
     private scenegraph: Scenegraph<VertexPNT>;
     private shaderLocations: ShaderLocationsVault;
-    private meshProperties: Map<string, MeshProperties>;
     private renderableMeshes: Map<string, RenderableMesh<VertexPNT>>;
 
     private time: number;
@@ -52,7 +50,6 @@ export class View {
         this.modelview = new Stack<mat4>();
         this.scenegraph = null;
         this.renderableMeshes = new Map<string, RenderableMesh<VertexPNT>>();
-        this.meshProperties = new Map<string, MeshProperties>();
         //set the clear color
         this.gl.clearColor(0.9, 0.9, 0.7, 1);
         this.viewType = 0;
@@ -326,6 +323,27 @@ export class View {
         `;
     }
 
+        private createAeroplane(x: number, y: number, z : number): string {
+        return `{
+            "type":"transform",
+            "name": "aeroplane-transform",
+            "transform": [
+                {"rotate": [90,1,0,0]},
+                
+                {"scale": [${x},${y},${z}]},
+                {"translate":[0,0,0]}
+            ],
+            "child": {
+                "type": "object",
+                "name": "aeroplanenode",
+                "instanceof": "aeroplane",
+                "material": {
+                    "color": [${Math.random()},${Math.random()},${Math.random()}]
+                }
+            }
+        }`;
+    }
+
     private createBox(x: number, y: number, z: number, tX: number, tY: number, tZ: number): string {
         return `{
             "type":"transform",
@@ -433,6 +451,7 @@ export class View {
         let minirate2: string = this.createTurrets(0, 0, 0, 4, 30, -4, 4, 10, -4, 17, 30, -53);
         let minirate3: string = this.createTurrets(0, 0, 0, 4, 30, -4, 4, 10, -4, 8.5, 30, -45);
         let minirate4: string = this.createTurrets(0, 0, 0, 4, 30, -4, 4, 10, -4, 8.5, 30, -62);
+        let aeroplane : string = this.createAeroplane(1,1,1);
         //Create the custom quad-turret thingy.
         return `
         {
@@ -462,7 +481,7 @@ export class View {
                     ${box7}, ${box8}, ${box9}, ${box10}, ${box11}, ${box12}, ${box13},
                     ${turret1}, ${turret2}, ${turret3}, ${turret4}, ${turret5}, ${turret6}, 
                     ${turret7}, ${turret8}, ${turret9}, ${turret10}, ${quadTurret1}, ${quadTurret2}, ${quadTurret3}, ${minirate1},
-                    ${minirate2}, ${minirate3}, ${minirate4}]
+                    ${minirate2}, ${minirate3}, ${minirate4}, ${aeroplane}]
             }
         }
         `
@@ -521,7 +540,8 @@ export class View {
             //console.log(this.getCoordinatesFromLine(this.getLineFromFrame(this.time,this.data)));
 
             let aeroPlaneInverse: mat4 = mat4.create();
-            mat4.invert(aeroPlaneInverse, this.meshProperties.get("aeroplane").getAnimationTransform());
+            //TODO : here to deal with lookAt
+            //mat4.invert(aeroPlaneInverse, this.scenegraph.getNodes().get("aeroplane").getAnimationTransform());
             mat4.multiply(this.modelview.peek(), this.modelview.peek(), aeroPlaneInverse);
         }
         else {
@@ -533,30 +553,6 @@ export class View {
 
         this.scenegraph.draw(this.modelview);
 
-        for (let [key, value] of this.meshProperties) {
-            //save the current modelview
-            this.modelview.push(mat4.clone(this.modelview.peek()));
-
-            mat4.multiply(this.modelview.peek()
-                , this.modelview.peek()
-                , value.getAnimationTransform());
-
-            mat4.multiply(this.modelview.peek()
-                , this.modelview.peek()
-                , value.getTransform());
-
-            //The total transformation is whatever was passed to it, with its own transformation
-            let modelviewLocation: WebGLUniformLocation = this.shaderLocations.getUniformLocation("modelview");
-            this.gl.uniformMatrix4fv(modelviewLocation, false, this.modelview.peek());
-
-            //set the color for all vertices to be drawn for this object
-            let colorLocation: WebGLUniformLocation = this.shaderLocations.getUniformLocation("vColor");
-            this.gl.uniform4fv(colorLocation, value.getColor());
-            this.renderableMeshes.get(value.getType()).draw(this.shaderLocations);
-
-            this.modelview.pop();
-        }
-        this.modelview.pop();
         
     }
     public setData(s : string) : void {
@@ -605,12 +601,9 @@ export class View {
         //mat4.rotateX(animationTransform,animationTransform, angleX - Math.PI / 2 );
         mat4.rotateY(animationTransform,animationTransform,angleY);
         mat4.rotateZ(animationTransform,animationTransform, angleZ);
-                
-
-
-        //mat4.rotate(animationTransform, animationTransform, Math.tan((nextCoord[0] - coord[0])/(nextCoord[1] - coord[1])), vec3.fromValues(coord[0], coord[1], coord[2]));
-
-        this.meshProperties.get("aeroplane").setAnimationTransform(animationTransform);
+        this.scenegraph.getNodes().get("aeroplane-transform").setAnimationTransform(animationTransform);
+        
+        console.log(this.scenegraph.getNodes().get("aeroplane-transform"));
     }
 
     public freeMeshes(): void {
@@ -624,30 +617,7 @@ export class View {
     public setFeatures(features: Features): void {
         window.addEventListener("keydown", ev => features.keyPress(ev.code));
     }
-
-
-    public setupScene(inputMeshes: Map<string, Mesh.PolygonMesh<VertexPNT>>): void {
-        let transform: mat4;
-        let animationTransform: mat4;
-        let color: vec4;
-        let shaderVarsToAttributes = new Map<string, string>();
-
-        shaderVarsToAttributes.set("vPosition", "position");
-
-        //convert all meshes to wireframe and into renderable meshes
-        for (let [n, mesh] of inputMeshes) {
-            //convert into canonical form
-            //now convert to wireframe
-            let wireframeMesh: Mesh.PolygonMesh<VertexPNT> = mesh.convertToWireframe();
-            //finally create buffers for rendering 
-            let renderableMesh: RenderableMesh<VertexPNT> = new RenderableMesh<VertexPNT>(this.gl, n);
-            renderableMesh.initMeshForRendering(shaderVarsToAttributes, wireframeMesh);
-            this.renderableMeshes.set(n, renderableMesh);
-
-        }
-
-        
-
+/*
         //aeroplane
         color = vec4.fromValues(1, 1, 0, 1);
         transform = mat4.create();
@@ -656,11 +626,7 @@ export class View {
         mat4.translate(transform, transform, vec3.fromValues(0, -0.5, 0));
         mat4.rotate(transform, transform, glMatrix.toRadian(180), vec3.fromValues(0, 1, 0));
         mat4.rotate(transform,transform, glMatrix.toRadian(0), vec3.fromValues(0,0,1));
-        //mat4.translate(transform, transform, vec3.fromValues(0, -0.5, 0));
-
-        animationTransform = mat4.create();
-        this.meshProperties.set('aeroplane', new MeshProperties('aeroplane', color, transform, animationTransform));
-    }
+*/
 
 
 }

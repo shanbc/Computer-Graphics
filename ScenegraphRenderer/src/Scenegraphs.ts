@@ -21,17 +21,15 @@ function main(): void {
     let model : ObjModel;
 
     window.onload = ev => {
-        let namesAndUrls: Map<string, string> = new Map<string, string>();
+        console.log("Here I am");
 
-        namesAndUrls.set("aeroplane", "models/aeroplane.obj");
-        ObjImporter.batchDownloadMesh(namesAndUrls, producer).then((inputMeshes: Map<string, Mesh.PolygonMesh<VertexPNT>>) => {
-            //retrieve <canvas> element
-            var canvas: HTMLCanvasElement = <HTMLCanvasElement>document.querySelector("#glCanvas");
-            if (!canvas) {
-                console.log("Failed to retrieve the <canvas> element");
-                return;
-            }
 
+        //retrieve <canvas> element
+        var canvas: HTMLCanvasElement = <HTMLCanvasElement>document.querySelector("#glCanvas");
+        if (!canvas) {
+            console.log("Failed to retrieve the <canvas> element");
+            return;
+        }
             //get the rendering context for webgl
             gl = WebGLUtils.setupWebGL(canvas, { 'antialias': false, 'alpha': false, 'depth': true, 'stencil': false });
 
@@ -42,8 +40,6 @@ function main(): void {
             }
             //create the view
             view = new View(gl);
-            //load in the meshes we just read
-            view.setupScene(inputMeshes);
             //create the model
             model = new ObjModel();
             controller = new Controller(model, view);
@@ -77,10 +73,9 @@ function main(): void {
 
         //call tick the first time
         tick();
-    });
+    };
 
     window.onbeforeunload = ev => view.freeMeshes();
-    }
 }
 
 function init(gl: WebGLRenderingContext) {
