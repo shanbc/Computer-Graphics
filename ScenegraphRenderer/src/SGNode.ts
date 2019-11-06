@@ -1,10 +1,10 @@
-import { mat4 } from "gl-matrix"
+import { mat4, vec3, vec4} from "gl-matrix"
 import { Scenegraph } from "Scenegraph"
 import { Stack } from "%COMMON/Stack";
 import { ScenegraphRenderer } from "ScenegraphRenderer";
 import { Material } from "%COMMON/Material";
 import { IVertexData } from "%COMMON/IVertexData";
-import { TransformNode } from "TransformNode";
+import {Light} from "%COMMON/Light";
 /**
  * This class represents a basic node of a scene graph.
  */
@@ -22,11 +22,23 @@ export abstract class SGNode {
      */
     protected scenegraph: Scenegraph<IVertexData>;
 
+    protected lights : Light;
+
     constructor(graph: Scenegraph<IVertexData>, name: string) {
         this.parent = null;
         this.scenegraph = graph;
         this.setName(name);
+        this.lights = new Light();
     }
+
+    /*
+     * By default, this method will set the lights values by taking many arguments 
+     */
+    public setLights(light : Light) {
+        this.lights = light;
+        console.log(this.lights);
+    }
+
 
     /**
      * By default, this method checks only itself. Nodes that have children should override this

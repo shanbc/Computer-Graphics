@@ -5,9 +5,10 @@ import { ObjImporter } from "%COMMON/ObjImporter";
 import { Mesh } from "%COMMON/PolygonMesh";
 import { SGNode } from "./SGNode";
 import { TransformNode } from "./TransformNode";
-import { mat4, vec3, glMatrix } from "gl-matrix";
+import { mat4, vec3, glMatrix, vec4 } from "gl-matrix";
 import { LeafNode } from "./LeafNode";
 import { Material } from "%COMMON/Material";
+import { Light } from "%COMMON/Light";
 
 export namespace ScenegraphJSONImporter {
 
@@ -51,6 +52,7 @@ export namespace ScenegraphJSONImporter {
 
     export function handleNode<VertexType extends IVertexData>(scenegraph: Scenegraph<VertexType>, obj: Object): SGNode {
         let result: SGNode = null;
+
         if (!("type" in obj)) {
             throw new Error("No type of node!");
         }
@@ -70,7 +72,64 @@ export namespace ScenegraphJSONImporter {
                 break;
             default:
                 throw new Error("Unknown node type");
+        }
 
+        if("lights" in obj) {
+            let newLight : Light = new Light();
+            let ambientLight : vec3;
+            let diffuseLight : vec3;
+            let specularLight : vec3;
+            let positionValue : vec3;
+            let spotDir : vec3;
+            let spotCut : number;
+            for(let light of (Object)(obj["lights"])) {
+                if("ambient" in light) {
+                    let values : number[] = convertToArray(light["ambient"]);
+                    if(values.length != 3) {
+                        throw new Error("3 values needed for ambient");
+                    }
+                    ambientLight = vec3.fromValues(values[0], values[1], values[2]);
+                    newLight.setAmbient(ambientLight);
+                }
+                if("diffuse" in light) {
+                    let values : number[] = convertToArray(light["diffuse"]);
+                    if(values.length != 3) {
+                        throw new Error("3 values needed for diffuse");
+                    }
+                    diffuseLight = vec3.fromValues(values[0], values[1], values[2]);
+                    newLight.setDiffuse(diffuseLight);
+                }
+                if("specular" in light) {
+                    let values : number[] = convertToArray(light["specular"]);
+                    if(values.length != 3) {
+                        throw new Error("3 values needed for specular");
+                    }
+                    specularLight = vec3.fromValues(values[0], values[1], values[2]);
+                    newLight.setSpecular(specularLight);
+                }
+                if("position" in light) {
+                    let values : number[] = convertToArray(light["position"]);
+                    if(values.length != 4) {
+                        throw new Error("3 values needed for position");
+                    }
+                    positionValue = vec3.fromValues(values[0], values[1], values[2]);
+                    newLight.setPosition(positionValue);
+                }
+                if("spotdirection" in light) {
+                    let values : number[] = convertToArray(light["spotdirection"]);
+                    if(values.length != 4) {
+                        throw new Error("3 values needed for spotdirection");
+                    }
+                    spotDir = vec3.fromValues(values[0], values[1], values[2]);
+                    newLight.setSpotDirection(spotDir);
+                }
+                if("spotcutoff" in light) {
+                    let values : number = light["spotcutoff"];
+                    spotCut = values;
+                    newLight.setSpotAngle(spotCut);
+                }
+            }
+            result.setLights(newLight);
         }
         return result;
     }
