@@ -129,7 +129,7 @@ export namespace ScenegraphJSONImporter {
                     newLight.setSpotAngle(spotCut);
                 }
             }
-            result.setLights(newLight);
+            result.addLights(newLight);
         }
         return result;
     }
@@ -223,7 +223,16 @@ export namespace ScenegraphJSONImporter {
 
         if ("material" in obj) {
             if ("color" in obj["material"]) {
-                material.setAmbient([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
+                // Not finished yet
+                /*material.setAmbient([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
+                material.setDiffuse([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
+                material.setSpecular([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);*/
+
+                material.setAmbient([Math.random(), Math.random(), Math.random()]);
+                material.setDiffuse([0.4, 0.9, 0.3]);
+                material.setSpecular([0.4, 0.9, 0.3]);
+                material.setShininess(0.7);
+
             }
             result.setMaterial(material);
         }

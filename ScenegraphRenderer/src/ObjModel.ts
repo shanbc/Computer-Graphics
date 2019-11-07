@@ -42,15 +42,12 @@ export class ObjModel implements ModelInterface {
         return `
         attribute vec4 vPosition;
         attribute vec4 vNormal;
-        attribute vec2 vTexCoord;
         
         uniform mat4 projection;
         uniform mat4 modelview;
         uniform mat4 normalmatrix;
-        //uniform mat4 texturematrix;
         varying vec3 fNormal;
         varying vec4 fPosition;
-        varying vec4 fTexCoord;
         
         void main()
         {
@@ -95,7 +92,7 @@ export class ObjModel implements ModelInterface {
         
         varying vec3 fNormal;
         varying vec4 fPosition;
-        varying vec4 fTexCoord;
+        //varying vec4 fTexCoord;
         
         
         uniform MaterialProperties material;
@@ -144,7 +141,6 @@ export class ObjModel implements ModelInterface {
             }
             //WE have changed something here
             //result = result * texture2D(image,fTexCoord.st);
-            result = vec4(0.5*(fTexCoord.st+vec2(1,1)),0.0,1.0);
             gl_FragColor = result;
         }
         

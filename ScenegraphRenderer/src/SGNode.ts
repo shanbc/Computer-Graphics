@@ -34,11 +34,11 @@ export abstract class SGNode {
     /*
      * By default, this method will set the lights values by taking many arguments 
      */
-    public setLights(light : Light) {
-        this.lights = light;
-        console.log(this.lights);
-    }
+    public abstract setLights(light : Light[]): void;
 
+    public getLights() : Light {
+        return this.lights;
+    }
 
     /**
      * By default, this method checks only itself. Nodes that have children should override this
@@ -78,6 +78,10 @@ export abstract class SGNode {
      */
     public setName(name: string): void {
         this.name = name;
+    }
+
+    public addLights(newLight: Light) {
+        this.lights = newLight;
     }
 
     /**

@@ -4,6 +4,7 @@ import { Scenegraph } from "./Scenegraph";
 import { Stack } from "%COMMON/Stack";
 import { ScenegraphRenderer } from "./ScenegraphRenderer";
 import { IVertexData } from "%COMMON/IVertexData";
+import { Light } from "%COMMON/Light";
 
 /**
  * This node represents a transformation in the scene graph. It has only one child. The 
@@ -12,6 +13,7 @@ import { IVertexData } from "%COMMON/IVertexData";
  * @author Amit Shesh
  */
 export class TransformNode extends SGNode {
+    
     /**
          * Matrices storing the static and animation transformations separately, so that they can be
          * changed separately
@@ -77,6 +79,12 @@ export class TransformNode extends SGNode {
         }
 
         return null;
+    }
+
+    public setLights(lights : Light[]) : void {
+        if(this.lights != null) {
+            lights.push(this.lights);
+        }
     }
 
     /**

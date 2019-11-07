@@ -7,6 +7,7 @@ import { SGNode } from "SGNode";
 import { Stack } from "%COMMON/Stack";
 import { mat4, vec4, vec3 } from "gl-matrix";
 import { Material } from "%COMMON/Material";
+import { Light } from "%COMMON/Light";
 
 /**
  * This is a scene graph renderer implementation that works specifically with WebGL.
@@ -87,6 +88,8 @@ export class ScenegraphRenderer {
         root.draw(this, modelView);
     }
 
+
+
     public dispose(): void {
         for (let mesh of this.meshRenderers.values()) {
             mesh.cleanup();
@@ -108,13 +111,20 @@ export class ScenegraphRenderer {
         //console.log("Mesh name: " + meshName);
         if (this.meshRenderers.has(meshName)) {
 
-            /*
+            let normalMatrix: mat4 = mat4.clone(transformation);
+            mat4.transpose(normalMatrix, normalMatrix);
+            mat4.invert(normalMatrix, normalMatrix);
+
+            this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("normalmatrix"), false, normalMatrix);
+
+
+            
             //send material to the shader
             this.gl.uniform3fv(this.shaderLocations.getUniformLocation("material.ambient"), material.getAmbient());
             this.gl.uniform3fv(this.shaderLocations.getUniformLocation("material.diffuse"), material.getDiffuse());
             this.gl.uniform3fv(this.shaderLocations.getUniformLocation("material.specular"), material.getSpecular());
             this.gl.uniform1f(this.shaderLocations.getUniformLocation("material.shininess"), material.getShininess());
-            */
+            
 /*
             //get the ambient
             let ambientLoc: WebGLUniformLocation = this.shaderLocations.getUniformLocation("material.ambient");
@@ -135,11 +145,11 @@ export class ScenegraphRenderer {
 */
             //get the color
             //I have modified this to work with three material self light
-            let loc: WebGLUniformLocation = this.shaderLocations.getUniformLocation("posiiton");
-            console.log(this.shaderLocations);
+            //let loc: WebGLUniformLocation = this.shaderLocations.getUniformLocation("posiiton");
+            //console.log(this.shaderLocations);
             //set the color for all vertices to be drawn for this object
-            let color: vec4 = vec4.fromValues(material.getAmbient()[0], material.getAmbient()[1], material.getAmbient()[2], 1);
-
+            //let color: vec4 = vec4.fromValues(material.getAmbient()[0], material.getAmbient()[1], material.getAmbient()[2], 1);
+            let loc : WebGLUniformLocation;
             loc = this.shaderLocations.getUniformLocation("modelview");
             this.gl.uniformMatrix4fv(loc, false, transformation);
 

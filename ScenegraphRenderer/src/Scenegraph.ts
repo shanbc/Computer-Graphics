@@ -4,6 +4,7 @@ import { Mesh } from "%COMMON/PolygonMesh";
 import { ScenegraphRenderer } from "ScenegraphRenderer";
 import { mat4, glMatrix, vec3 } from "gl-matrix";
 import { Stack } from "%COMMON/Stack";
+import { Light } from "%COMMON/Light";
 
 /**
  * A specific implementation of this scene graph. This implementation is still independent
@@ -12,6 +13,7 @@ import { Stack } from "%COMMON/Stack";
  */
 
 export class Scenegraph<VertexType extends IVertexData> {
+     
     /**
      * The root of the scene graph tree
      */
@@ -35,12 +37,14 @@ export class Scenegraph<VertexType extends IVertexData> {
      */
     protected renderer: ScenegraphRenderer;
 
+    private lights : Light[];
 
     public constructor() {
         this.root = null;
         this.meshes = new Map<string, Mesh.PolygonMesh<VertexType>>();
         this.nodes = new Map<string, SGNode>();
         this.textures = new Map<string, string>();
+        this.lights = [];
     }
 
     public dispose(): void {
@@ -105,6 +109,14 @@ export class Scenegraph<VertexType extends IVertexData> {
         return this.meshes;
     }
 
+    public setLights(lights : Light[]) : void{
+        this.root.setLights(lights);
+  }
+
+  public getLights() : Light[] {
+      return this.lights;
+  }
+
     public getNodes(): Map<string, SGNode> {
         return this.nodes;
     }
@@ -112,4 +124,5 @@ export class Scenegraph<VertexType extends IVertexData> {
     public addTexture(textureName: string, path: string): void {
         this.textures.set(textureName, path);
     }
+
 }

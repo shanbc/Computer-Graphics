@@ -5,6 +5,7 @@ import { Stack } from "%COMMON/Stack";
 import { ScenegraphRenderer } from "./ScenegraphRenderer";
 import { mat4 } from "gl-matrix";
 import { IVertexData } from "%COMMON/IVertexData";
+import { Light } from "%COMMON/Light";
 
 /**
  * This node represents the leaf of a scene graph. It is the only type of node that has
@@ -29,6 +30,12 @@ export class LeafNode extends SGNode {
     public constructor(instanceOf: string, graph: Scenegraph<IVertexData>, name: string) {
         super(graph, name);
         this.meshName = instanceOf;
+    }
+
+    public setLights(lights : Light[]) : void {
+        if(this.lights != null) {
+            lights.push(this.lights);
+        }
     }
 
 
