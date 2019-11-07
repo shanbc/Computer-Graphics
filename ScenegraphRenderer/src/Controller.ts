@@ -34,7 +34,6 @@ export class Controller implements Features {
         //this.view.initShaders(this.model.getVShader(), this.model.getFShader());
         //the view is now ready to draw
         this.view.initScenegraph();
-        this.view.initRendering();
         this.view.draw();
     }
 

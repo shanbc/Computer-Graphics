@@ -84,9 +84,6 @@ export class View {
 
 
     private lights: LightInfo[];
-    private shaderVarsToAttributes: Map<string, string>;
-    private renderableMeshes: RenderableMeshInfo[];
-    private meshes: MeshInfo[];
 
     constructor(gl: WebGLRenderingContext) {
         this.gl = gl;
@@ -103,10 +100,6 @@ export class View {
         //We must also specify "where" the above part of the virtual world will be shown on the actual canvas on screen. This part of the screen where the above drawing gets pasted is called the "viewport", which we set here. The origin of the viewport is left,bottom. In this case we want it to span the entire canvas, so we start at (0,0) with a width and height of 400 each (matching the dimensions of the canvas specified in HTML)
         this.gl.viewport(0, 0, 400, 400);
         //console.log(this.cameraPath);
-
-        this.renderableMeshes = [];
-        this.meshes = [];
-
         //Initialize the light
         this.initLights();
     }
@@ -138,17 +131,6 @@ export class View {
         this.gl.useProgram(this.shaderProgram);
 
         this.shaderLocations = new ShaderLocationsVault(this.gl, this.shaderProgram);
-    }
-
-    public initRendering() {
-        this.renderableMeshes = [];
-        this.meshes.forEach((meshInfo: MeshInfo) => {
-            let rMesh: RenderableMesh<IVertexData> = new RenderableMesh<IVertexData>(this.gl, "");
-            rMesh.initMeshForRendering(this.shaderVarsToAttributes, meshInfo.mesh);
-
-            this.renderableMeshes.push(new RenderableMeshInfo(rMesh, meshInfo.transform, meshInfo.material));
-        }
-        );
     }
 
     public initScenegraph(): void {
@@ -495,12 +477,17 @@ export class View {
 
         this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("projection"), false, this.proj);
 
-        //this.setLight(this.scenegraph); // -> this.lights
+        //this.setLight(); // -> this.lights
 
         this.scenegraph.draw(this.modelview);
-
-
     }
+/*
+    private setLight() : void {
+        this.lights;
+        this.scenegraph.getRoot()
+    }
+*/
+
     public setData(s: string): void {
         this.data = s;
     }
