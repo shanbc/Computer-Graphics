@@ -28,7 +28,7 @@ export abstract class SGNode {
         this.parent = null;
         this.scenegraph = graph;
         this.setName(name);
-        this.lights = new Light();
+        this.lights = null;
     }
 
     /*
