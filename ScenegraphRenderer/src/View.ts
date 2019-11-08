@@ -98,21 +98,21 @@ export class View {
     //This global light may not be used
 
     let l: Light = new Light();
-    l.setAmbient([0.1, 0.1, 0.1]);
-    l.setDiffuse([0.4, 0.4, 0.4]);
+    l.setAmbient([0.8, 0.8, 0.8]);
+    l.setDiffuse([0.8, 0.8, 0.8]);
     l.setSpecular([0.6, 0.6, 0.6]);
-    l.setPosition([0, 50, 0]);
+    l.setPosition([0, 100, 0]);
     l.setSpotDirection(vec3.fromValues(0, -1, 0));
     l.setSpotAngle(25);
     this.lights[0] = l;
+
+    
     
   }
 
   public getNumberOfLights(): number {
     
-    console.log(this.lights);
-    //return this.scenegraph.getLights().length;
-    return 2;
+    return 1;
   }
 
 
@@ -185,7 +185,7 @@ export class View {
         let renderer: ScenegraphRenderer = new ScenegraphRenderer(this.gl, this.shaderLocations, shaderVarsToVertexAttribs);
         this.scenegraph = s;
         this.scenegraph.setRenderer(renderer);
-        this.scenegraph.setLights(this.lights);
+        //this.scenegraph.setLights(this.lights);
       });
 
     //set it up

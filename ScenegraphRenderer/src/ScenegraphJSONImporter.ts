@@ -223,17 +223,29 @@ export namespace ScenegraphJSONImporter {
 
         if ("material" in obj) {
             if ("color" in obj["material"]) {
-                // Not finished yet
-                /*material.setAmbient([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
-                material.setDiffuse([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
-                material.setSpecular([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);*/
-
                 material.setAmbient([Math.random(), Math.random(), Math.random()]);
-                material.setDiffuse([0.4, 0.9, 0.3]);
-                material.setSpecular([0.4, 0.9, 0.3]);
-                material.setShininess(0.7);
-
+                material.setDiffuse([Math.random(), Math.random(), Math.random()]);
+                material.setSpecular([Math.random(), Math.random(), Math.random()]);
+                /*
+                material.setAmbient([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
+                material.setDiffuse([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
+                material.setSpecular([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
+                */
             }
+            /*
+            if ("ambient" in obj["material"]) {
+                material.setAmbient([obj["material"]["ambient"][0], obj["material"]["ambient"][1], obj["material"]["ambient"][2]]);
+            }
+            if("diffuse" in obj["material"]) {
+                material.setDiffuse([obj["material"]["diffuse"][0], obj["material"]["diffuse"][1], obj["material"]["diffuse"][2]]);
+            }
+            if("specular" in obj["material"]) {
+                material.setSpecular([obj["material"]["specular"][0], obj["material"]["specular"][1], obj["material"]["specular"][2]]);
+            }
+            if("shininess" in obj["material"]) {
+                material.setShininess(obj["material"["shininess"]]);
+            }
+            */
             result.setMaterial(material);
         }
         return result;
