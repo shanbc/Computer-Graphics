@@ -38,8 +38,6 @@ export class LeafNode extends SGNode {
         }
     }
 
-
-
     /*
 	 *Set the material of each vertex in this object
 	 */

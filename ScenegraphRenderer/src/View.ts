@@ -95,28 +95,20 @@ export class View {
 
   private initLights(): void {
     this.lights = [];
-    //This global light may not be used
-
-    let l: Light = new Light();
-    l.setAmbient([0.8, 0.8, 0.8]);
-    l.setDiffuse([0.8, 0.8, 0.8]);
-    l.setSpecular([0.6, 0.6, 0.6]);
-    l.setPosition([0, 100, 0]);
-    l.setSpotDirection(vec3.fromValues(0, -1, 0));
-    l.setSpotAngle(25);
-    this.lights[0] = l;
-
-    
-    
   }
 
   public getNumberOfLights(): number {
-    
-    return 1;
+    if (this.scenegraph == null) {
+      return 5;
+    }
+    else {
+      return this.lights.length;
+    }
   }
 
 
   public initShaders(vShaderSource: string, fShaderSource: string) {
+
     //create and set up the shader
     this.shaderProgram = WebGLUtils.createShaderProgram(this.gl, vShaderSource, fShaderSource);
     //enable the current program
@@ -176,7 +168,7 @@ export class View {
           this.scenegraph.setRenderer(renderer);
       }); */
 
-    ScenegraphJSONImporter.importJSON(new VertexPNTProducer(), this.jsonLight())
+    ScenegraphJSONImporter.importJSON(new VertexPNTProducer(), this.jsonHogwarts())
       .then((s: Scenegraph<VertexPNT>) => {
         let shaderVarsToVertexAttribs: Map<string, string> = new Map<string, string>();
         shaderVarsToVertexAttribs.set("vPosition", "position");
@@ -200,13 +192,12 @@ export class View {
     if (this.scenegraph != null) {
       this.scenegraph.animate(this.time);
     }
+    this.placeAeroplaneAtCoord(this.getCoordinatesFromLine(this.getLineFromFrame(this.frame, s)), this.getCoordinatesFromLine(this.getLineFromFrame((this.frame + 1), s)));
+
     this.draw();
   }
 
   public draw(): void {
-
-    
-
     this.gl.clearColor(1, 1, 1, 1);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     this.gl.enable(this.gl.DEPTH_TEST);
@@ -215,40 +206,45 @@ export class View {
       return;
     }
 
+    this.lights = [];
+    this.scenegraph.setLights(this.lights);
+
     let i: number = 0;
-    //Note : trying to draw the light
-    let ambientLocation: string = "light[" + i + "].ambient";
-    let diffuseLocation: string = "light[" + i + "].diffuse";
-    let specularLocation: string = "light[" + i + "].specular";
-    this.gl.uniform3fv(this.shaderLocations.getUniformLocation(ambientLocation), this.lights[i].getAmbient());
-    this.gl.uniform3fv(this.shaderLocations.getUniformLocation(diffuseLocation), this.lights[i].getDiffuse());
-    this.gl.uniform3fv(this.shaderLocations.getUniformLocation(specularLocation), this.lights[i].getSpecular());
+    for (i = 0; i < this.lights.length; i++) {
+      //Note : trying to draw the light
+      let ambientLocation: string = "light[" + i + "].ambient";
+      let diffuseLocation: string = "light[" + i + "].diffuse";
+      let specularLocation: string = "light[" + i + "].specular";
+      this.gl.uniform3fv(this.shaderLocations.getUniformLocation(ambientLocation), this.lights[i].getAmbient());
+      this.gl.uniform3fv(this.shaderLocations.getUniformLocation(diffuseLocation), this.lights[i].getDiffuse());
+      this.gl.uniform3fv(this.shaderLocations.getUniformLocation(specularLocation), this.lights[i].getSpecular());
 
-    //send all the View-space lights to the GPU
+      //send all the View-space lights to the GPU
 
-    let lightPositionLocation: string = "light[" + i + "].position";
-    
-    //this.gl.uniform4fv(this.shaderLocations.getUniformLocation(lightPositionLocation), this.lights[i].getPosition());
-    let result : vec4 = vec4.create();
-    vec4.transformMat4(result, this.lights[0].getPosition(), this.modelview.peek());
-    this.gl.uniform4fv(this.shaderLocations.getUniformLocation(lightPositionLocation), result);
+      let lightPositionLocation: string = "light[" + i + "].position";
 
-/*
-    this.modelview.push(mat4.lookAt(mat4.create()
-      , [0, 0, 80]
-      , [0, 0, 0]
-      , [0, 1, 0]));
-      */
+      //this.gl.uniform4fv(this.shaderLocations.getUniformLocation(lightPositionLocation), this.lights[i].getPosition());
+      let result: vec4 = vec4.create();
+      vec4.transformMat4(result, this.lights[0].getPosition(), this.modelview.peek());
+      this.gl.uniform4fv(this.shaderLocations.getUniformLocation(lightPositionLocation), result);
+    }
+
+    /*
+        this.modelview.push(mat4.lookAt(mat4.create()
+          , [0, 0, 80]
+          , [0, 0, 0]
+          , [0, 1, 0]));
+          */
 
 
-    
-            //the normal matrix = inverse transpose of modelview
-                let normalMatrix: mat4 = mat4.clone(this.modelview.peek());
-                mat4.transpose(normalMatrix, normalMatrix);
-                mat4.invert(normalMatrix, normalMatrix);
-    
-                this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("normalmatrix"), false, normalMatrix);
-                
+
+    //the normal matrix = inverse transpose of modelview
+    let normalMatrix: mat4 = mat4.clone(this.modelview.peek());
+    mat4.transpose(normalMatrix, normalMatrix);
+    mat4.invert(normalMatrix, normalMatrix);
+
+    this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("normalmatrix"), false, normalMatrix);
+
 
 
 
@@ -888,6 +884,68 @@ export class View {
             "root": {
                 "type": "group",
                 "name": "root",
+                "lights": [
+                  {
+                    "ambient": [
+                      0.8,
+                      0.0,
+                      0.0
+                    ],
+                    "diffuse": [
+                      0.8,
+                      0.8,
+                      0.8
+                    ],
+                    "specular": [
+                      0.8,
+                      0.8,
+                      0.8
+                    ],
+                    "position": [
+                      0.0,
+                      50.0,
+                      -50.0,
+                      1.0
+                    ],
+                    "spotdirection": [
+                      0.0,
+                      -1.0,
+                      0.0,
+                      0.0
+                    ],
+                    "spotcutoff": 100.0
+                  },
+                  {
+                    "ambient": [
+                      0.0,
+                      0.0,
+                      0.7
+                    ],
+                    "diffuse": [
+                      0.8,
+                      0.8,
+                      0.8
+                    ],
+                    "specular": [
+                      0.8,
+                      0.8,
+                      0.8
+                    ],
+                    "position": [
+                      0.0,
+                      50.0,
+                      50.0,
+                      1.0
+                    ],
+                    "spotdirection": [
+                      0.0,
+                      -1.0,
+                      0.0,
+                      0.0
+                    ],
+                    "spotcutoff": 0
+                  }
+                ],
                 "children": [${box1}, ${box2}, ${box3}, ${box4}, ${box5}, ${box6}, 
                     ${box7}, ${box8}, ${box9}, ${box10}, ${box11}, ${box12}, ${box13},
                     ${turret1}, ${turret2}, ${turret3}, ${turret4}, ${turret5}, ${turret6}, 

@@ -142,6 +142,7 @@ export class ObjModel implements ModelInterface {
                     specular = material.specular * light[i].specular * pow(rDotV,material.shininess);
                 else
                     specular = vec3(0,0,0);
+                 result = result + vec4(ambient+diffuse+specular,1.0);    
 
 
                 float intensity = 0.0;
@@ -161,9 +162,7 @@ export class ObjModel implements ModelInterface {
                         spec = specular * pow(intSpec, material.shininess);
                     }
                 }
-                //result =vec4(max(intensity * diffuse + spec, ambient), 1.0);
-                                        result = result + vec4(ambient+diffuse+specular,1.0); 
-
+                result =vec4(max(intensity * diffuse + spec, ambient), 1.0);
                 //result = result * spotFactor;
             }
             //WE have changed something here

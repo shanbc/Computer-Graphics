@@ -223,16 +223,16 @@ export namespace ScenegraphJSONImporter {
 
         if ("material" in obj) {
             if ("color" in obj["material"]) {
+                /*
                 material.setAmbient([Math.random(), Math.random(), Math.random()]);
                 material.setDiffuse([Math.random(), Math.random(), Math.random()]);
                 material.setSpecular([Math.random(), Math.random(), Math.random()]);
-                /*
+                */
                 material.setAmbient([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
                 material.setDiffuse([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
                 material.setSpecular([obj["material"]["color"][0], obj["material"]["color"][1], obj["material"]["color"][2]]);
-                */
             }
-            /*
+            
             if ("ambient" in obj["material"]) {
                 material.setAmbient([obj["material"]["ambient"][0], obj["material"]["ambient"][1], obj["material"]["ambient"][2]]);
             }
@@ -245,7 +245,7 @@ export namespace ScenegraphJSONImporter {
             if("shininess" in obj["material"]) {
                 material.setShininess(obj["material"["shininess"]]);
             }
-            */
+            
             result.setMaterial(material);
         }
         return result;

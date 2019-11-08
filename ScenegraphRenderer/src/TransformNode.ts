@@ -85,6 +85,9 @@ export class TransformNode extends SGNode {
         if(this.lights != null) {
             lights.push(this.lights);
         }
+        if(this.child != null) {
+            return this.child.setLights(lights);
+        }
     }
 
     /**

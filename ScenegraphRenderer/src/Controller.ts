@@ -38,7 +38,7 @@ export class Controller implements Features {
         console.log(numLights);
 
         //get the shaders from the model and pass it to the WebGL-specific view 
-        this.view.initShaders(this.model.getPhongVShader(), this.model.getPhongFShader(numLights));
+        this.view.initShaders(this.model.getPhongVShader(), this.model.getPhongFShader1(numLights));
 
         this.view.draw();
     }
