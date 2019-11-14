@@ -79,7 +79,7 @@ export class LeafNode extends SGNode {
     public draw(context: ScenegraphRenderer, modelView: Stack<mat4>): void {
         if (this.meshName.length > 0) {
             //console.log(this.material);
-            console.log(this.scenegraph.getTexturePath(this.textureName));
+            //console.log(this.scenegraph.getTexturePath(this.textureName));
             context.addTexture(this.textureName,this.scenegraph.getTexturePath(this.textureName));
             context.drawMesh(this.meshName, this.material, this.textureName, modelView.peek());
         }

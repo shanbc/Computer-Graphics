@@ -64,6 +64,7 @@ export class View {
     this.shaderProgram = WebGLUtils.createShaderProgram(this.gl, vShaderSource, fShaderSource);
     //enable the current program
     this.gl.useProgram(this.shaderProgram);
+    //this.shaderVarsToAttributes.set("vTexCoord", "texcoord");
 
     this.shaderLocations = new ShaderLocationsVault(this.gl, this.shaderProgram);
 
@@ -73,6 +74,8 @@ export class View {
     let shaderVarsToVertexAttribs: Map<string, string> = new Map<string, string>();
     shaderVarsToVertexAttribs.set("vPosition", "position");
     shaderVarsToVertexAttribs.set("vNormal", "normal");
+    shaderVarsToVertexAttribs.set("vTexCoord", "texcoord");
+    
     let renderer: ScenegraphRenderer = new ScenegraphRenderer(this.gl, this.shaderLocations, shaderVarsToVertexAttribs);
     this.scenegraph.setRenderer(renderer);
   }
@@ -331,13 +334,6 @@ export class View {
     if (this.scenegraph == null) {
       return;
     }
-    
-        // this.gl.enable(this.gl.TEXTURE_2D);
-        //deal with texture 0
-        //this.gl.activeTexture(this.gl.TEXTURE0);
-        //that is what we pass to the shader
-        //this.gl.uniform1i(this.shaderLocations.getUniformLocation("image"), 0);
-
 
     this.gl.useProgram(this.shaderProgram)
 
@@ -358,16 +354,6 @@ export class View {
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
 */
-/*
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
-
-            // Prevents s-coordinate wrapping (repeating).
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-            // Prevents t-coordinate wrapping (repeating).
-            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-*/  
-
 
     this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("projection"), false, this.proj);
 

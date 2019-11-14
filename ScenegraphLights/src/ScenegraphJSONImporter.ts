@@ -328,7 +328,7 @@ export namespace ScenegraphJSONImporter {
             textureName = obj["texture"];
         }
         //console.log(textureName);
-        //result.setTextureName(textureName);
+        result.setTextureName(textureName);
 
         return result;
     }
@@ -346,11 +346,11 @@ export namespace ScenegraphJSONImporter {
                 
                 let path : string = objImage[n]["path"];
                 //let textureObject : TextureObject = new TextureObject(this.gl, n, path);
-                //scenegraph.addTexture(objImage[n]["name"], path);
+                scenegraph.addTexture(objImage[n]["name"], path);
                 //TODO: Figure out what to do with this textureObject
             }
 
-            //scenegraph.addTexture("white", "/textures/white.png");
+            scenegraph.addTexture("white", "/textures/white.png");
 
 
             //import them

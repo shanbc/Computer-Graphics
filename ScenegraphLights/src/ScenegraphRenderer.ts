@@ -62,6 +62,7 @@ export class ScenegraphRenderer {
         if (mesh.getVertexCount() <= 0)
             return;
         let vertexData: K = mesh.getVertexAttributes()[0];
+        console.log(this.shaderVarsToVertexAttribs);
         for (let [s, a] of this.shaderVarsToVertexAttribs) {
             if (!vertexData.hasData(a))
                 throw new Error("Mesh does not have vertex attribute " + a);
@@ -112,7 +113,7 @@ export class ScenegraphRenderer {
             this.gl.uniform3fv(this.shaderLocations.getUniformLocation(specularLocation), lights[i].getSpecular());
             this.gl.uniform4fv(this.shaderLocations.getUniformLocation(positionLocation), lights[i].getPosition());
             this.gl.uniform4fv(this.shaderLocations.getUniformLocation(spotDirectionLocation), lights[i].getSpotDirection());
-            console.log("spot angle: " + lights[i].getSpotCutoff());
+            //console.log("spot angle: " + lights[i].getSpotCutoff());
             this.gl.uniform1f(this.shaderLocations.getUniformLocation(spotCutoffLocation), Math.cos(glMatrix.toRadian(lights[i].getSpotCutoff())));
         }
     }
@@ -135,9 +136,14 @@ export class ScenegraphRenderer {
      * @param transformation
      */
     public drawMesh(meshName: string, material: Material, textureName: string, transformation: mat4) {
-        if (this.meshRenderers.has(meshName)) {
-            //get the color
+        if (this.meshRenderers.has(meshName)) {    
+            // this.gl.enable(this.gl.TEXTURE_2D);
+            //deal with texture 0
+            this.gl.activeTexture(this.gl.TEXTURE0);
+            //that is what we pass to the shader
+            this.gl.uniform1i(this.shaderLocations.getUniformLocation("image"), 0);
 
+            //get the color
             let loc: WebGLUniformLocation = this.shaderLocations.getUniformLocation("material.ambient");
             this.gl.uniform3fv(loc, material.getAmbient());
 
@@ -161,14 +167,27 @@ export class ScenegraphRenderer {
             loc = this.shaderLocations.getUniformLocation("normalmatrix");
             this.gl.uniformMatrix4fv(loc, false, normalMatrix);
 
-            //send the texture matrix
-            //this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("texturematrix"), false, transformation);
 
             //Texture object
             //console.log(this.textures.get(textureName).getTextureID());
-            //this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures.get(textureName).getTextureID());
+            let flipTextureMatrix: mat4 = mat4.create();
+            mat4.translate(flipTextureMatrix, flipTextureMatrix, [0, 1, 0]);
+            mat4.scale(flipTextureMatrix, flipTextureMatrix, [1, -1, 1]);
 
+            //send the texture matrix
+            this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("texturematrix"), false, flipTextureMatrix);
+            console.log(this.textures.get(textureName).getTextureID());
             
+            this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures.get(textureName).getTextureID());
+
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+
+            // Prevents s-coordinate wrapping (repeating).
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+            // Prevents t-coordinate wrapping (repeating).
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+
 
 
 
