@@ -1,12 +1,18 @@
 import { View } from "View"
 import * as OBJ from "webgl-obj-loader"
-import { mat4 } from "gl-matrix"
+import { vec2,mat4 } from "gl-matrix"
 import { Material } from "%COMMON/Material"
 
 export interface Features {
+    /*mousePress(x: number, y: number): void;
+    mouseRelease(x: number, y: number): void;
+    mouseDragged(x: number, y: number): void;
+    */
 }
 export class Controller implements Features {
     private view: View;
+    private mousePos: vec2;
+    private dragged: boolean;
 
     constructor(view: View) {
         this.view = view;
@@ -23,6 +29,25 @@ export class Controller implements Features {
                 this.view.draw();
             });
     }
+/*
+    public mousePress(x: number, y: number): void {
+        this.mousePos = vec2.fromValues(x, y);
+        this.dragged = true;
+    }
+    public mouseRelease(x: number, y: number): void {
+        let delta: vec2 = vec2.fromValues(x - this.mousePos[0], y - this.mousePos[1]);
+        this.view.trackball(delta);
+        this.mousePos = vec2.fromValues(x, y);
+        this.dragged = false;
+    }
+    public mouseDragged(x: number, y: number): void {
+        if (this.dragged) {
+            let delta: vec2 = vec2.fromValues(x - this.mousePos[0], y - this.mousePos[1]);
+            this.view.trackball(delta);
+            this.mousePos = vec2.fromValues(x, y);
+        }
+    }
+    */
 
     public getPhongVShader(): string {
         return `

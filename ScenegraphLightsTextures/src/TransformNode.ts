@@ -5,6 +5,8 @@ import { Stack } from "%COMMON/Stack";
 import { ScenegraphRenderer } from "./ScenegraphRenderer";
 import { IVertexData } from "%COMMON/IVertexData";
 import { Light } from "%COMMON/Light";
+import { Ray } from "Ray";
+import { HitRecord } from "HitRecord";
 
 /**
  * This node represents a transformation in the scene graph. It has only one child. The 
@@ -131,6 +133,18 @@ export class TransformNode extends SGNode {
         if (this.child != null)
             this.child.draw(context, modelView);
         modelView.pop();
+    }
+
+    public calculateHitInfo(ray : Ray, modelview : Stack<mat4>, hitRecord : HitRecord) : void{
+        modelview.push(mat4.clone(modelview.peek()));
+
+        mat4.multiply(modelview.peek(), modelview.peek(), this.animationTransform);
+        mat4.multiply(modelview.peek(), modelview.peek(), this.transform);
+
+        if(this.child != null) {
+            this.child.calculateHitInfo(ray, modelview, hitRecord);
+        }
+        modelview.pop();
     }
 
 

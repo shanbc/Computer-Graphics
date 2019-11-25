@@ -5,6 +5,8 @@ import { ScenegraphRenderer } from "ScenegraphRenderer";
 import { mat4, glMatrix, vec3 } from "gl-matrix";
 import { Stack } from "%COMMON/Stack";
 import { Light } from "%COMMON/Light";
+import { Ray } from "Ray";
+import { HitRecord } from "HitRecord";
 export class Scenegraph<VertexType extends IVertexData> {
     /**
      * The root of the scene graph tree
@@ -90,6 +92,14 @@ export class Scenegraph<VertexType extends IVertexData> {
         if ((this.root != null) && (this.renderer != null)) {
             this.renderer.draw(this.root, modelView);
         }
+    }
+
+    public closest_intersection(ray : Ray, modelview : Stack<mat4>) : HitRecord{
+        let hitRecord : HitRecord = new HitRecord(Infinity);
+        if ((this.root != null) && (this.renderer != null)) {
+            this.root.calculateHitInfo(ray, modelview, hitRecord);
+        }
+        return hitRecord;
     }
 
     public addPolygonMesh(meshName: string, mesh: Mesh.PolygonMesh<VertexType>): void {

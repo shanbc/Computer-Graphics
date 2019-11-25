@@ -51,7 +51,7 @@ function main(): void {
                 let currentTime: number = new Date().getTime();
                 let frameRate: number = 1000 * numFrames / (currentTime - lastTime);
                 lastTime = currentTime;
-                document.getElementById('frameratedisplay').innerHTML = "Frame rate: " + frameRate.toFixed(1);
+                //document.getElementById('frameratedisplay').innerHTML = "Frame rate: " + frameRate.toFixed(1);
                 numFrames = 0;
             }
             view.animate();

@@ -5,6 +5,8 @@ import { ScenegraphRenderer } from "ScenegraphRenderer";
 import { Material } from "%COMMON/Material";
 import { IVertexData } from "%COMMON/IVertexData";
 import { Light } from "%COMMON/Light";
+import { Ray } from "Ray";
+import { HitRecord } from "HitRecord";
 /**
  * This class represents a basic node of a scene graph.
  */
@@ -132,4 +134,6 @@ export abstract class SGNode {
     public getMaterial(): Material {
         throw new Error("Not supported");
     }
+
+    public abstract calculateHitInfo(ray: Ray, modelview : Stack<mat4>, hitRecord : HitRecord) : void;
 }

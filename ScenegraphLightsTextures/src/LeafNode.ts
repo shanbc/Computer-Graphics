@@ -5,6 +5,8 @@ import { Stack } from "%COMMON/Stack";
 import { ScenegraphRenderer } from "./ScenegraphRenderer";
 import { mat4 } from "gl-matrix";
 import { IVertexData } from "%COMMON/IVertexData";
+import { HitRecord } from "./HitRecord";
+import {Ray} from "./Ray";
 
 /**
  * This node represents the leaf of a scene graph. It is the only type of node that has
@@ -75,6 +77,12 @@ export class LeafNode extends SGNode {
     public draw(context: ScenegraphRenderer, modelView: Stack<mat4>): void {
         if (this.meshName.length > 0) {
             context.drawMesh(this.meshName, this.material, this.textureName, modelView.peek());
+        }
+    }
+
+    public calculateHitInfo(ray : Ray, modelview : Stack<mat4>, hitRecord : HitRecord) : void{
+        if (this.meshName.length > 0) {
+            
         }
     }
 

@@ -5,6 +5,8 @@ import { Stack } from "%COMMON/Stack";
 import { mat4, vec4, vec3 } from "gl-matrix";
 import { IVertexData } from "%COMMON/IVertexData";
 import { Light } from "%COMMON/Light";
+import { HitRecord } from "./HitRecord";
+import {Ray} from "./Ray";
 
 /**
  * This class represents a group node in the scenegraph. A group node is simply a logical grouping
@@ -62,6 +64,10 @@ export class GroupNode extends SGNode {
      */
     public draw(context: ScenegraphRenderer, modelView: Stack<mat4>): void {
         this.children.forEach(child => child.draw(context, modelView));
+    }
+
+    public calculateHitInfo(ray : Ray, modelview : Stack<mat4>, hitRecord : HitRecord) : void{
+        this.children.forEach(child => child.calculateHitInfo(ray,modelview,hitRecord));
     }
 
     /**

@@ -8,6 +8,8 @@ import { ShaderLocationsVault } from "%COMMON/ShaderLocationsVault";
 import { Light } from "%COMMON/Light"
 import { ScenegraphRenderer } from "./ScenegraphRenderer";
 import { ScenegraphJSONImporter } from "./ScenegraphJSONImporter"
+import {Ray} from "./Ray"
+import { HitRecord } from "HitRecord";
 
 
 
@@ -32,6 +34,10 @@ export class View {
   private shaderLocations: ShaderLocationsVault;
 
   private time: number;
+
+  //trackball transform
+  private trackballTransform: mat4;
+  private trackBallOn: number;
 
   constructor(gl: WebGLRenderingContext) {
     this.gl = gl;
@@ -77,7 +83,7 @@ export class View {
 
   public initScenegraph(): Promise<void> {
     return new Promise<void>((resolve) => {
-      ScenegraphJSONImporter.importJSON(new VertexPNTProducer(), this.face())
+      ScenegraphJSONImporter.importJSON(new VertexPNTProducer(), this.json())
         .then((s: Scenegraph<VertexPNT>) => {
           this.scenegraph = s;
           resolve();
@@ -1572,12 +1578,44 @@ export class View {
             "root": {
                 "type": "group",
                 "name": "root",
+                "lights": [
+          {
+            "ambient": [
+              0.8,
+              0.8,
+              0.8
+            ],
+            "diffuse": [
+              0.8,
+              0.8,
+              0.8
+            ],
+            "specular": [
+              0.8,
+              0.8,
+              0.8
+            ],
+            "position": [
+              0.0,
+              100.0,
+              0.0,
+              1.0
+            ],
+            "spotdirection": [
+              0.0,
+              -1.0,
+              0.0,
+              0.0
+            ],
+            "spotcutoff": 50.0
+          }
+        ],
                 "children": [
                     {
                         "type":"transform",
                         "name": "box-transform",
                         "transform": [
-                            {"scale": [50,50,50]}
+                            {"scale": [0,0,-50]}
                         ],
                         "child": {
                             "type": "object",
@@ -1654,7 +1692,11 @@ export class View {
     this.modelview.push(mat4.create());
     this.modelview.push(mat4.clone(this.modelview.peek()));
     // This is for simple objects
-    mat4.lookAt(this.modelview.peek(), vec3.fromValues(0, 100, 200), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+    mat4.lookAt(this.modelview.peek(), vec3.fromValues(0, 0, 200), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+    console.log(this.modelview.peek());
+
+    //Calculate the ray trace here by the model view stack from the camera
+    
 
     //This is for hogwarts model 
     //mat4.lookAt(this.modelview.peek(), vec3.fromValues(100, 100, 150), vec3.fromValues(75, 50, 0), vec3.fromValues(0, 1, 0));
@@ -1666,11 +1708,54 @@ export class View {
     this.scenegraph.draw(this.modelview);
   }
 
+  public rayTrace(width : number, height : number, modelview : Stack<mat4>, cameraPos : vec3) : void{
+    let i : number;
+    let j : number;
+    let camera : mat4 = modelview.peek();
+    let colors : vec3[];
+    // go through the row first then to the column
+    for( i= -width / 2; i < width / 2; i ++) {
+      for(j = -height / 2; j < height / 2; j ++) {
+        let ray : Ray = new Ray(cameraPos, vec3.fromValues(i + cameraPos[0],j + cameraPos[1], 0));
+        let color : vec3 = this.rayCast(ray, modelview);
+        colors.push(color);
+      }
+    }
+  }
+
+  public rayCast(ray : Ray, modelview : Stack<mat4>) : vec3 {
+    let blackColor : vec3 = vec3.fromValues(0,0,0);
+    let redColor : vec3 = vec3.fromValues(1,0,0);
+    let color : vec3 = vec3.create();
+    let hitRecord : HitRecord = this.scenegraph.closest_intersection(ray, modelview);
+    if(hitRecord.getTime() != Infinity) {
+      color = redColor;
+    }
+    else {
+      color = blackColor;
+    }
+
+
+    return color;
+  }
+
   public freeMeshes(): void {
     this.scenegraph.dispose();
   }
 
   public setFeatures(features: Features): void {
+    /*
+    window.addEventListener("keydown", ev => features.keyPress(ev.code));
+        //mouse events
+        let canvas: HTMLCanvasElement = <HTMLCanvasElement>document.querySelector("#glCanvas");
+        let canvasBounds: ClientRect = canvas.getBoundingClientRect();
+        let width: number = Number(canvas.getAttribute("width"));
+        let height: number = Number(canvas.getAttribute("height"));
+
+        canvas.addEventListener("mousedown", ev => features.mousePress(ev.x - canvasBounds.left, (ev.y) + canvasBounds.top));
+        canvas.addEventListener("mouseup", ev => features.mouseRelease(ev.x - canvasBounds.left, (ev.y) + canvasBounds.top));
+        canvas.addEventListener("mousemove", ev => features.mouseDragged(ev.x - canvasBounds.left, (ev.y) + canvasBounds.top));
+        */
   }
 
   private createAeroplane(x: number, y: number, z: number): string {
