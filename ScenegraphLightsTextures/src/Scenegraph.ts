@@ -5,8 +5,8 @@ import { ScenegraphRenderer } from "ScenegraphRenderer";
 import { mat4, glMatrix, vec3 } from "gl-matrix";
 import { Stack } from "%COMMON/Stack";
 import { Light } from "%COMMON/Light";
-import { Ray } from "Ray";
-import { HitRecord } from "HitRecord";
+import { Ray } from "./Ray";
+import { HitRecord } from "./HitRecord";
 export class Scenegraph<VertexType extends IVertexData> {
     /**
      * The root of the scene graph tree

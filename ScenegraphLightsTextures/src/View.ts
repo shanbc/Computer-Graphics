@@ -1565,8 +1565,8 @@ export class View {
         {
             "instances": [
             {
-                "name": "box",
-                "path": "models/box.obj"
+                "name": "sphere",
+                "path": "models/sphere.obj"
             }
             ],
             "images" : [
@@ -1613,14 +1613,14 @@ export class View {
                 "children": [
                     {
                         "type":"transform",
-                        "name": "box-transform",
+                        "name": "sphere-transform",
                         "transform": [
-                            {"scale": [0,0,-50]}
+                            {"scale": [50,50,-50]}
                         ],
                         "child": {
                             "type": "object",
-                            "name": "boxnode",
-                            "instanceof": "box",
+                            "name": "spherenode",
+                            "instanceof": "sphere",
                             "texture" : "white",
                             "material": 
                             {
@@ -1692,10 +1692,12 @@ export class View {
     this.modelview.push(mat4.create());
     this.modelview.push(mat4.clone(this.modelview.peek()));
     // This is for simple objects
-    mat4.lookAt(this.modelview.peek(), vec3.fromValues(0, 0, 200), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
-    console.log(this.modelview.peek());
+    mat4.lookAt(this.modelview.peek(), vec3.fromValues(0, 50, 200), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+    //console.log(this.modelview.peek());
 
     //Calculate the ray trace here by the model view stack from the camera
+
+    this.rayTrace(2,2,this.modelview,vec3.fromValues(0,0,200));
     
 
     //This is for hogwarts model 
@@ -1717,6 +1719,8 @@ export class View {
     for( i= -width / 2; i < width / 2; i ++) {
       for(j = -height / 2; j < height / 2; j ++) {
         let ray : Ray = new Ray(cameraPos, vec3.fromValues(i + cameraPos[0],j + cameraPos[1], 0));
+        //console.log(ray.getDirection());
+        console.log(ray.getStartPoint());
         let color : vec3 = this.rayCast(ray, modelview);
         colors.push(color);
       }
@@ -1734,8 +1738,6 @@ export class View {
     else {
       color = blackColor;
     }
-
-
     return color;
   }
 
