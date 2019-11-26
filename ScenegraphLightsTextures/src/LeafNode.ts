@@ -92,12 +92,14 @@ export class LeafNode extends SGNode {
     }
 
     public calculateHitInfoSphere(ray : Ray, modelview : Stack<mat4>, hitRecord : HitRecord) : void{
+        //console.log(ray.getDirection()[0], ray.getDirection()[1], ray.getDirection()[2]);
         let transformation : mat4 = modelview.peek();
         //console.log(ray.getDirection());
         let rayPos : vec4= vec4.fromValues(ray.getStartPoint()[0],ray.getStartPoint()[1],ray.getStartPoint()[2], 1);
         let rayDir : vec4 = vec4.fromValues(ray.getDirection()[0],ray.getDirection()[1],ray.getDirection()[2], 1);
         vec4.transformMat4(rayPos, rayPos, transformation);
         vec4.transformMat4(rayDir, rayDir, transformation);
+        //console.log(rayDir[0], rayDir[1],rayDir[2], rayDir[3]);
         let v : vec4 = rayDir;
         let s : vec4 = rayPos;
         let v_x : number = v[0];
@@ -112,6 +114,7 @@ export class LeafNode extends SGNode {
         let currentShortestTime : number = Infinity;
         let t1 : number = (-B + Math.sqrt(Math.pow(B, 2) - 4 * A * C)) / (2 * A);
         let t2 : number = (-B - Math.sqrt(Math.pow(B, 2) - 4 * A * C)) / (2 * A);
+        console.log((Math.pow(B, 2) - 4 * A * C));
         if(t1 > t2) {
             currentShortestTime = t2;
         }

@@ -1615,7 +1615,7 @@ export class View {
                         "type":"transform",
                         "name": "sphere-transform",
                         "transform": [
-                            {"scale": [50,50,-50]}
+                            {"scale": [25,25,-25]}
                         ],
                         "child": {
                             "type": "object",
@@ -1714,14 +1714,14 @@ export class View {
     let i : number;
     let j : number;
     let camera : mat4 = modelview.peek();
-    let colors : vec3[];
+    let colors : vec3[] = [];
     // go through the row first then to the column
-    for( i= -width / 2; i < width / 2; i ++) {
-      for(j = -height / 2; j < height / 2; j ++) {
-        let ray : Ray = new Ray(cameraPos, vec3.fromValues(i + cameraPos[0],j + cameraPos[1], 0));
-        //console.log(ray.getDirection());
-        console.log(ray.getStartPoint());
+    for( i= -height / 2; i < height / 2; i ++) {
+      for(j = -width / 2; j < width / 2; j ++) {
+        let ray : Ray = new Ray(cameraPos, vec3.fromValues(j + cameraPos[0],i + cameraPos[1], -1));
+        //console.log(ray.getDirection()[0], ray.getDirection()[1], ray.getDirection()[2]);
         let color : vec3 = this.rayCast(ray, modelview);
+        //console.log(colors);
         colors.push(color);
       }
     }
