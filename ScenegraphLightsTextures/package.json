@@ -1,0 +1,12 @@
+{
+  "name": "scenegraphlightstextures",
+  "version": "1.0.0",
+  "description": "This program shows how to implement and render a scene graph with lights and textures",
+  "main": "ScenegraphsLightsTextures.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Amit Shesh",
+  "license": "ISC",
+  "dependencies": {}
+}

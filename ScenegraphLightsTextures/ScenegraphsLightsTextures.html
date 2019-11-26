@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/png" href="out/webgl.jpg" />
+    <style>
+        .interaction {
+            float: left;
+            vertical-align: middle;
+
+        }
+
+        .section {
+            display: inline-block;
+            width: auto;
+        }
+    </style>
+    <meta charset="utf-8" />
+    <!--Paste the style code below in your project -->
+    <style>
+        .division {
+            float: left;
+        }
+
+        section:after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+    </style>
+
+
+    <title>Scene graph rendering demo</title>
+</head>
+
+<body>
+    <section>
+        <div style="float:left">
+            <canvas id="glCanvas" width="400" height="400">
+                Please use a browser that supports "canvas"
+            </canvas>
+        </div>
+        <div style="float:left">
+            <canvas style="background-color:blue" id="raytraceCanvas" width="400" height="400">
+                Please use a browser that supports "canvas"
+            </canvas>
+            <input type="button" id="savebutton" value="Save to result.png" />
+        </div>
+    </section>
+    <script src="out/ScenegraphsLightsTextures.js"></script>
+</body>
+
+</html>
