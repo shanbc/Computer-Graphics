@@ -1,3 +1,5 @@
+import { vec3 } from "gl-matrix";
+
 export class RTView {
     private canvas: HTMLCanvasElement;
     constructor() {
@@ -18,23 +20,26 @@ export class RTView {
         link.click();
     }
 
-    public fillCanvas(): void {
+    public fillCanvas(colors : vec3[], w : number, h : number): void {
         let width: number = Number(this.canvas.getAttribute("width"));
         let height: number = Number(this.canvas.getAttribute("height"));
-        let imageData: ImageData = this.canvas.getContext('2d').createImageData(width, height);
+        //console.log(w,h);
+        let imageData: ImageData = this.canvas.getContext('2d').createImageData(w, h);
 
-        for (let i: number = 0; i < height; i++) {
-            for (let j: number = 0; j < width; j++) {
-                imageData.data[4 * (i * width + j)] = Math.random() * 255;
-                imageData.data[4 * (i * width + j) + 1] = Math.random() * 255;
-                imageData.data[4 * (i * width + j) + 2] = Math.random() * 255;
-                imageData.data[4 * (i * width + j) + 3] = 255;
+        for (let i: number = 0; i < h; i++) {
+            for (let j: number = 0; j < w; j++) {
+                 
+                imageData.data[4 * (i * w + j)] = colors[i * w + j][0] * 255;//Math.random() * 255;
+                imageData.data[4 * (i * w + j) + 1] = colors[i * w + j][1] * 255;//Math.random() * 255;
+                imageData.data[4 * (i * w + j) + 2] = colors[i * w + j][2] * 255;//Math.random() * 255;
+                imageData.data[4 * (i * w + j) + 3] = 255;
+                
             }
         }
         this.canvas.getContext('2d').putImageData(imageData, 0, 0);
 
-        let context: CanvasRenderingContext2D = this.canvas.getContext('2d')
-        context.fillStyle = 'red';
-        context.fillRect(100, 100, 200, 100);
+        //let context: CanvasRenderingContext2D = this.canvas.getContext('2d')
+        //context.fillStyle = 'red';
+        //context.fillRect(100, 100, 200, 100);
     }
 }

@@ -98,7 +98,9 @@ export class Scenegraph<VertexType extends IVertexData> {
         let hitRecord : HitRecord = new HitRecord(Infinity);
         if ((this.root != null) && (this.renderer != null)) {
             this.root.calculateHitInfo(ray, modelview, hitRecord);
+            //console.log(hitRecord.getTime());
         }
+        
         return hitRecord;
     }
 

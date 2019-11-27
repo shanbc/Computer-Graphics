@@ -154,6 +154,7 @@ export class ScenegraphRenderer {
 
             loc = this.shaderLocations.getUniformLocation("normalmatrix");
             this.gl.uniformMatrix4fv(loc, false, normalMatrix);
+            /*
 
             //matrix to flip the texture vertically
             let flipTextureMatrix: mat4 = mat4.create();
@@ -176,6 +177,7 @@ export class ScenegraphRenderer {
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
             // Prevents t-coordinate wrapping (repeating).
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+            */
 
 
             this.meshRenderers.get(meshName).draw(this.shaderLocations);

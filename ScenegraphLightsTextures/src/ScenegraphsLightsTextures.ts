@@ -32,15 +32,17 @@ function main(): void {
             return;
         }
         console.log("Window loaded");
-        view = new View(gl);
-
+        //set up the ray tracer view
+        let raytracerView: RTView = new RTView();
+        view = new View(gl, raytracerView);
+        
+        
+        
 
         controller = new Controller(view);
         controller.go();
 
-        //set up the ray tracer view
-        let raytracerView: RTView = new RTView();
-        raytracerView.fillCanvas();
+       
 
         var tick = function () {
             if (lastTime == -1) {

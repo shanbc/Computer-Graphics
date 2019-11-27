@@ -6,8 +6,7 @@ export class Ray {
 
     public constructor(startPoint : vec3, direction : vec3) {
         this.startPoint = startPoint;
-        vec3.normalize(this.direction, direction);
-        //this.direction = direction;
+        this.direction = direction;
     }
 
     public getStartPoint() : vec3 {

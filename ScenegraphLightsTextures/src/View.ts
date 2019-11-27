@@ -10,6 +10,7 @@ import { ScenegraphRenderer } from "./ScenegraphRenderer";
 import { ScenegraphJSONImporter } from "./ScenegraphJSONImporter"
 import {Ray} from "./Ray"
 import { HitRecord } from "HitRecord";
+import { RTView } from "./RTView";
 
 
 
@@ -35,15 +36,18 @@ export class View {
 
   private time: number;
 
+  private rayTraceView : RTView;
+
   //trackball transform
   private trackballTransform: mat4;
   private trackBallOn: number;
 
-  constructor(gl: WebGLRenderingContext) {
+  constructor(gl: WebGLRenderingContext, rayTraceView : RTView) {
     this.gl = gl;
     this.time = 0;
     this.modelview = new Stack<mat4>();
     this.scenegraph = null;
+    this.rayTraceView = rayTraceView;
     //set the clear color
     this.gl.clearColor(0.9, 0.9, 0.7, 1);
 
@@ -55,7 +59,7 @@ export class View {
     //this.proj = mat4.perspective(this.proj, glMatrix.toRadian(60), 1, 0.1, 10000);
 
     //We must also specify "where" the above part of the virtual world will be shown on the actual canvas on screen. This part of the screen where the above drawing gets pasted is called the "viewport", which we set here. The origin of the viewport is left,bottom. In this case we want it to span the entire canvas, so we start at (0,0) with a width and height of 400 each (matching the dimensions of the canvas specified in HTML)
-    this.gl.viewport(0, 0, 400, 400);
+    this.gl.viewport(0, 0, 800, 800);
   }
 
   public getNumLights(): number {
@@ -76,7 +80,6 @@ export class View {
     let shaderVarsToVertexAttribs: Map<string, string> = new Map<string, string>();
     shaderVarsToVertexAttribs.set("vPosition", "position");
     shaderVarsToVertexAttribs.set("vNormal", "normal");
-    shaderVarsToVertexAttribs.set("vTexCoord", "texcoord");
     let renderer: ScenegraphRenderer = new ScenegraphRenderer(this.gl, this.shaderLocations, shaderVarsToVertexAttribs);
     this.scenegraph.setRenderer(renderer);
   }
@@ -500,7 +503,6 @@ export class View {
                   "child": {
                     "type": "object",
                     "instanceof": "cone",
-                    "texture": "checkerboard",
                     "material": {
                       "ambient": [
                         0.1,
@@ -550,1013 +552,95 @@ export class View {
     return `
         {
             "instances": [
-                {
-                    "name":"sphere",
-                    "path":"models/sphere.obj"
-                },
-                {
-                    "name":"box",
-                    "path":"models/box.obj"
-                },
-                {
-                    "name":"cylinder",
-                    "path":"models/cylinder.obj"
-                },
-                {
-                    "name":"cone",
-                    "path":"models/cone.obj"
-                }
+            {
+                "name": "box",
+                "path": "models/box.obj"
+            }
             ],
             "root": {
-                "type":"group",
-                "children":[
-                {
-                    "type":"transform",
-                    "transform":[
-                        {"scale":[50,5,50]}
-                    ],
-                    "child": {
-                        "type":"object",
-                        "instanceof":"box",
-                        "material": {
-                            "color":[0.5,0.5,0.5]
+                "type": "group",
+                "name": "root",
+                "lights": [
+          {
+            "ambient": [
+              0.8,
+              0.8,
+              0.8
+            ],
+            "diffuse": [
+              0.8,
+              0.8,
+              0.8
+            ],
+            "specular": [
+              0.8,
+              0.8,
+              0.8
+            ],
+            "position": [
+              0.0,
+              100.0,
+              0.0,
+              1.0
+            ],
+            "spotdirection": [
+              0.0,
+              -1.0,
+              0.0,
+              0.0
+            ],
+            "spotcutoff": 50.0
+          }
+        ],
+                "children": [
+                    {
+                        "type":"transform",
+                        "name": "box-transform",
+                        "transform": [
+                            {"scale": [50,50,-50]}
+                        ],
+                        "child": {
+                            "type": "object",
+                            "name": "boxnode",
+                            "instanceof": "box",
+                            "material": 
+                            {
+                              "ambient": [
+                                0.1,
+                                0.0,
+                                0.1,
+                                1.0
+                              ],
+                              "diffuse": [
+                                0.8,
+                                0.0,
+                                0.8,
+                                1.0
+                              ],
+                              "specular": [
+                                0.8,
+                                0.0,
+                                0.8,
+                                1.0
+                              ],
+                              "emission": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0
+                              ],
+                              "shininess": 100.0,
+                              "absorption": 1.0,
+                              "reflection": 0.0,
+                              "transparency": 0.0,
+                              "refractive_index": 0.0
+                            }
                         }
                     }
-                },
-                {
-                    "type":"transform",
-                    "name":"face",
-                    "transform":[
-                        {"translate":[0,25,0]}
-                    ],        
-                    "child": {
-                        "type":"group",
-                        "children": [
-                            {
-                                "type":"transform",
-                                "name":"actualface",
-                                "transform":[
-                                    {"scale":[20,25,20]}
-                                ],
-                                "child": {
-                                    "type":"object",
-                                    "instanceof":"sphere",
-                                    "material": {
-                                        "color":[1,1,0.8]
-                                    }
-                                }
-                            },
-                            {
-                                "type":"transform",
-                                "name":"lefteye",
-                                "transform":[
-                                    {"translate":[7,15,12]},
-                                    {"scale":[3,4,3]}
-                                ],
-                                "child": {
-                                    "type":"object",
-                                    "instanceof":"sphere",
-                                    "material": {
-                                        "color":[0,0,0]
-                                    }
-                                }
-                            },
-                            {
-                                "type":"transform",
-                                "name":"righteye",
-                                "transform":[
-                                    {"translate":[-7,15,12]},
-                                    {"scale":[3,4,3]}
-                                ],
-                                "child": {
-                                    "type":"object",
-                                    "instanceof":"sphere",
-                                    "material": {
-                                        "color":[0,0,0]
-                                    }
-                                }
-                            },
-                            {
-                                "type":"transform",
-                                "name":"nose",
-                                "transform":[
-                                    {"translate":[0,10,10]},
-                                    {"rotate":[90,1,0,0]},
-                                    {"scale":[5,20,5]}
-                                ],
-                                "child": {
-                                    "type":"object",
-                                    "instanceof":"cylinder",
-                                    "material": {
-                                        "color":[1,0,0]
-                                    }
-                                }
-                            },
-                            {
-                                "type":"transform",
-                                "name":"hat",
-                                "transform":[
-                                    {"translate":[0,20,0]},
-                                    {"scale":[10,25,10]}
-                                ],
-                                "child": {
-                                    "type":"object",
-                                    "instanceof":"cone",
-                                    "material": {
-                                        "color":[1,0,1]
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }]
+                ]
             }
         }
         `;
-
-  }
-
-  private humanoid(): string {
-    return `
-        {
-            "scaleinstances": "false",
-            "instances": [
-              {
-                "name": "sphere",
-                "path": "models/sphere.obj"
-              },
-              {
-                "name": "box",
-                "path": "models/box.obj"
-              },
-              {
-                "name": "cylinder",
-                "path": "models/cylinder.obj"
-              },
-              {
-                "name": "cone",
-                "path": "models/cone.obj"
-              }
-            ],
-            "root": {
-              "type": "group",
-              "name": "Root of scene graph",
-              "children": [
-                {
-                  "type": "transform",
-                  "transform": [
-                    {
-                      "translate": [
-                        0.0,
-                        -36.0,
-                        0.0
-                      ]
-                    },
-                    {
-                      "scale": [
-                        72.0,
-                        72.0,
-                        72.0
-                      ]
-                    }
-                  ],
-                  "child": {
-                    "type": "group",
-                    "name": "unit-height-humanoid",
-                    "children": [
-                      {
-                        "type": "transform",
-                        "transform": [
-                          {
-                            "scale": [
-                              0.0125,
-                              0.0125,
-                              0.0125
-                            ]
-                          }
-                        ],
-                        "child": {
-                          "type": "group",
-                          "children": [
-                            {
-                              "type": "group",
-                              "name": "lowerbody",
-                              "children": [
-                                {
-                                  "type": "transform",
-                                  "name": "leftleg",
-                                  "transform": [
-                                    {
-                                      "translate": [
-                                        5.0,
-                                        0.0,
-                                        0.0
-                                      ]
-                                    }
-                                  ],
-                                  "child": {
-                                    "type": "group",
-                                    "name": "leg",
-                                    "children": [
-                                      {
-                                        "type": "transform",
-                                        "name": "shin",
-                                        "transform": [
-                                          {
-                                            "scale": [
-                                              1.0,
-                                              20.0,
-                                              1.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "object",
-                                          "instanceof": "cylinder",
-                                          "material": {
-                                            "color": [
-                                              1.0,
-                                              0.0,
-                                              0.0
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              0.0,
-                                              21.0,
-                                              0.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "transform",
-                                          "name": "knee",
-                                          "transform": [
-                                            {
-                                              "scale": [
-                                                2.0,
-                                                2.0,
-                                                2.0
-                                              ]
-                                            }
-                                          ],
-                                          "child": {
-                                            "type": "object",
-                                            "instanceof": "sphere",
-                                            "material": {
-                                              "color": [
-                                                0.0,
-                                                1.0,
-                                                0.0
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              0.0,
-                                              22.0,
-                                              0.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "transform",
-                                          "name": "thigh",
-                                          "transform": [
-                                            {
-                                              "scale": [
-                                                1.0,
-                                                20.0,
-                                                1.0
-                                              ]
-                                            }
-                                          ],
-                                          "child": {
-                                            "type": "object",
-                                            "instanceof": "cylinder",
-                                            "material": {
-                                              "color": [
-                                                1.0,
-                                                0.0,
-                                                0.0
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              0.0,
-                                              42.0,
-                                              0.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "transform",
-                                          "name": "hip",
-                                          "transform": [
-                                            {
-                                              "scale": [
-                                                2.0,
-                                                2.0,
-                                                2.0
-                                              ]
-                                            }
-                                          ],
-                                          "child": {
-                                            "type": "object",
-                                            "instanceof": "sphere",
-                                            "material": {
-                                              "color": [
-                                                0.0,
-                                                1.0,
-                                                0.0
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                },
-                                {
-                                  "type": "transform",
-                                  "name": "rightleg",
-                                  "transform": [
-                                    {
-                                      "translate": [
-                                        -5.0,
-                                        0.0,
-                                        0.0
-                                      ]
-                                    }
-                                  ],
-                                  "child": {
-                                    "type": "group",
-                                    "children": [
-                                      {
-                                        "type": "transform",
-                                        "name": "shin",
-                                        "transform": [
-                                          {
-                                            "scale": [
-                                              1.0,
-                                              20.0,
-                                              1.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "object",
-                                          "instanceof": "cylinder",
-                                          "material": {
-                                            "color": [
-                                              1.0,
-                                              0.0,
-                                              0.0
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              0.0,
-                                              21.0,
-                                              0.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "transform",
-                                          "name": "knee",
-                                          "transform": [
-                                            {
-                                              "scale": [
-                                                2.0,
-                                                2.0,
-                                                2.0
-                                              ]
-                                            }
-                                          ],
-                                          "child": {
-                                            "type": "object",
-                                            "instanceof": "sphere",
-                                            "material": {
-                                              "color": [
-                                                0.0,
-                                                1.0,
-                                                0.0
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              0.0,
-                                              22.0,
-                                              0.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "transform",
-                                          "name": "thigh",
-                                          "transform": [
-                                            {
-                                              "scale": [
-                                                1.0,
-                                                20.0,
-                                                1.0
-                                              ]
-                                            }
-                                          ],
-                                          "child": {
-                                            "type": "object",
-                                            "instanceof": "cylinder",
-                                            "material": {
-                                              "color": [
-                                                1.0,
-                                                0.0,
-                                                0.0
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              0.0,
-                                              42.0,
-                                              0.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "transform",
-                                          "name": "hip",
-                                          "transform": [
-                                            {
-                                              "scale": [
-                                                2.0,
-                                                2.0,
-                                                2.0
-                                              ]
-                                            }
-                                          ],
-                                          "child": {
-                                            "type": "object",
-                                            "instanceof": "sphere",
-                                            "material": {
-                                              "color": [
-                                                0.0,
-                                                1.0,
-                                                0.0
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              ]
-                            },
-                            {
-                              "type": "group",
-                              "name": "upperbody",
-                              "children": [
-                                {
-                                  "type": "transform",
-                                  "transform": [
-                                    {
-                                      "translate": [
-                                        0.0,
-                                        42.0,
-                                        0.0
-                                      ]
-                                    }
-                                  ],
-                                  "child": {
-                                    "type": "group",
-                                    "children": [
-                                      {
-                                        "type": "transform",
-                                        "name": "pelvis",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              5.0,
-                                              0.0,
-                                              0.0
-                                            ]
-                                          },
-                                          {
-                                            "rotate": [
-                                              90.0,
-                                              0.0,
-                                              0.0,
-                                              1.0
-                                            ]
-                                          },
-                                          {
-                                            "scale": [
-                                              1.0,
-                                              10.0,
-                                              1.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "object",
-                                          "instanceof": "cylinder",
-                                          "material": {
-                                            "color": [
-                                              1.0,
-                                              1.0,
-                                              0.0
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "name": "torso",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              0.0,
-                                              2.0,
-                                              0.0
-                                            ]
-                                          },
-                                          {
-                                            "scale": [
-                                              1.0,
-                                              25.0,
-                                              1.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "object",
-                                          "instanceof": "cylinder",
-                                          "material": {
-                                            "color": [
-                                              0.0,
-                                              1.0,
-                                              0.0
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "name": "shoulder",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              10.0,
-                                              27.0,
-                                              0.0
-                                            ]
-                                          },
-                                          {
-                                            "rotate": [
-                                              90.0,
-                                              0.0,
-                                              0.0,
-                                              1.0
-                                            ]
-                                          },
-                                          {
-                                            "scale": [
-                                              1.0,
-                                              20.0,
-                                              1.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "object",
-                                          "instanceof": "cylinder",
-                                          "material": {
-                                            "color": [
-                                              1.0,
-                                              1.0,
-                                              0.0
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "name": "lefthand",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              10.0,
-                                              27.0,
-                                              0.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "transform",
-                                          "transform": [
-                                            {
-                                              "translate": [
-                                                0,
-                                                0,
-                                                0
-                                              ]
-                                            }
-                                          ],
-                                          "child": {
-                                            "type": "group",
-                                            "children": [
-                                              {
-                                                "type": "transform",
-                                                "transform": [
-                                                  {
-                                                    "translate": [
-                                                      0.0,
-                                                      -10.0,
-                                                      0.0
-                                                    ]
-                                                  }
-                                                ],
-                                                "child": {
-                                                  "type": "transform",
-                                                  "name": "arm",
-                                                  "transform": [
-                                                    {
-                                                      "scale": [
-                                                        1.0,
-                                                        10.0,
-                                                        1.0
-                                                      ]
-                                                    }
-                                                  ],
-                                                  "child": {
-                                                    "type": "object",
-                                                    "instanceof": "cylinder",
-                                                    "material": {
-                                                      "color": [
-                                                        1.0,
-                                                        0.0,
-                                                        0.0
-                                                      ]
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                              {
-                                                "type": "transform",
-                                                "transform": [
-                                                  {
-                                                    "translate": [
-                                                      0.0,
-                                                      -11.0,
-                                                      0.0
-                                                    ]
-                                                  }
-                                                ],
-                                                "child": {
-                                                  "type": "transform",
-                                                  "name": "leftelbow",
-                                                  "transform": [
-                                                    {
-                                                      "scale": [
-                                                        2.0,
-                                                        2.0,
-                                                        2.0
-                                                      ]
-                                                    }
-                                                  ],
-                                                  "child": {
-                                                    "type": "object",
-                                                    "instanceof": "sphere",
-                                                    "material": {
-                                                      "color": [
-                                                        0.0,
-                                                        1.0,
-                                                        0.0
-                                                      ]
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                              {
-                                                "type": "transform",
-                                                "transform": [
-                                                  {
-                                                    "translate": [
-                                                      0.0,
-                                                      -12.0,
-                                                      0.0
-                                                    ]
-                                                  }
-                                                ],
-                                                "child": {
-                                                  "type": "transform",
-                                                  "name": "leftforearm",
-                                                  "transform": [
-                                                    {
-                                                      "translate": [
-                                                        0.0,
-                                                        -10.0,
-                                                        0.0
-                                                      ]
-                                                    },
-                                                    {
-                                                      "scale": [
-                                                        1.0,
-                                                        10.0,
-                                                        1.0
-                                                      ]
-                                                    }
-                                                  ],
-                                                  "child": {
-                                                    "type": "object",
-                                                    "instanceof": "cylinder",
-                                                    "material": {
-                                                      "color": [
-                                                        1.0,
-                                                        0.0,
-                                                        1.0
-                                                      ]
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "name": "righthand",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              -10.0,
-                                              27.0,
-                                              0.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "transform",
-                                          "name": "righthand",
-                                          "transform": [
-                                            {
-                                              "translate": [
-                                                0,
-                                                0,
-                                                0
-                                              ]
-                                            }
-                                          ],
-                                          "child": {
-                                            "type": "group",
-                                            "children": [
-                                              {
-                                                "type": "transform",
-                                                "transform": [
-                                                  {
-                                                    "translate": [
-                                                      0.0,
-                                                      -10.0,
-                                                      0.0
-                                                    ]
-                                                  }
-                                                ],
-                                                "child": {
-                                                  "type": "transform",
-                                                  "name": "rightarm",
-                                                  "transform": [
-                                                    {
-                                                      "scale": [
-                                                        1.0,
-                                                        10.0,
-                                                        1.0
-                                                      ]
-                                                    }
-                                                  ],
-                                                  "child": {
-                                                    "type": "object",
-                                                    "instanceof": "cylinder",
-                                                    "material": {
-                                                      "color": [
-                                                        1.0,
-                                                        0.0,
-                                                        0.0
-                                                      ]
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                              {
-                                                "type": "transform",
-                                                "transform": [
-                                                  {
-                                                    "translate": [
-                                                      0.0,
-                                                      -11.0,
-                                                      0.0
-                                                    ]
-                                                  }
-                                                ],
-                                                "child": {
-                                                  "type": "transform",
-                                                  "name": "rightelbow",
-                                                  "transform": [
-                                                    {
-                                                      "scale": [
-                                                        2.0,
-                                                        2.0,
-                                                        2.0
-                                                      ]
-                                                    }
-                                                  ],
-                                                  "child": {
-                                                    "type": "object",
-                                                    "instanceof": "sphere",
-                                                    "material": {
-                                                      "color": [
-                                                        0.0,
-                                                        1.0,
-                                                        0.0
-                                                      ]
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                              {
-                                                "type": "transform",
-                                                "transform": [
-                                                  {
-                                                    "translate": [
-                                                      0.0,
-                                                      -12.0,
-                                                      0.0
-                                                    ]
-                                                  }
-                                                ],
-                                                "child": {
-                                                  "type": "transform",
-                                                  "name": "rightforearm",
-                                                  "transform": [
-                                                    {
-                                                      "translate": [
-                                                        0.0,
-                                                        -10.0,
-                                                        0.0
-                                                      ]
-                                                    },
-                                                    {
-                                                      "scale": [
-                                                        1.0,
-                                                        10.0,
-                                                        1.0
-                                                      ]
-                                                    }
-                                                  ],
-                                                  "child": {
-                                                    "type": "object",
-                                                    "instanceof": "cylinder",
-                                                    "material": {
-                                                      "color": [
-                                                        1.0,
-                                                        0.0,
-                                                        1.0
-                                                      ]
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            ]
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              ]
-                            },
-                            {
-                              "type": "group",
-                              "name": "headneck",
-                              "children": [
-                                {
-                                  "type": "transform",
-                                  "transform": [
-                                    {
-                                      "translate": [
-                                        0.0,
-                                        70.0,
-                                        0.0
-                                      ]
-                                    }
-                                  ],
-                                  "child": {
-                                    "type": "group",
-                                    "children": [
-                                      {
-                                        "type": "transform",
-                                        "name": "neck",
-                                        "transform": [
-                                          {
-                                            "scale": [
-                                              1.0,
-                                              5.0,
-                                              1.0
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "object",
-                                          "instanceof": "cylinder",
-                                          "material": {
-                                            "color": [
-                                              1.0,
-                                              0.0,
-                                              0.0
-                                            ]
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "transform",
-                                        "name": "head",
-                                        "transform": [
-                                          {
-                                            "translate": [
-                                              0.0,
-                                              8.0,
-                                              0.0
-                                            ]
-                                          },
-                                          {
-                                            "scale": [
-                                              3.2,
-                                              3.5,
-                                              3.2
-                                            ]
-                                          }
-                                        ],
-                                        "child": {
-                                          "type": "object",
-                                          "instanceof": "sphere",
-                                          "material": {
-                                            "color": [
-                                              1.0,
-                                              1.0,
-                                              0.0
-                                            ]
-                                          }
-                                        }
-                                      }
-                                    ]
-                                  }
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                }
-              ]
-            }
-          }
-                
-        `
   }
 
   //a JSON representation of a simple scene graph
@@ -1568,12 +652,6 @@ export class View {
                 "name": "sphere",
                 "path": "models/sphere.obj"
             }
-            ],
-            "images" : [
-              {
-                "name" : "white",
-                "path" : "textures/white.png"
-              }
             ],
             "root": {
                 "type": "group",
@@ -1615,13 +693,12 @@ export class View {
                         "type":"transform",
                         "name": "sphere-transform",
                         "transform": [
-                            {"scale": [25,25,-25]}
+                            {"scale": [50,50,-50]}
                         ],
                         "child": {
                             "type": "object",
                             "name": "spherenode",
                             "instanceof": "sphere",
-                            "texture" : "white",
                             "material": 
                             {
                               "ambient": [
@@ -1691,54 +768,75 @@ export class View {
      */
     this.modelview.push(mat4.create());
     this.modelview.push(mat4.clone(this.modelview.peek()));
+    let cameraPos : vec3 = vec3.fromValues(0, 0, 500);
+    let position : vec3 = vec3.create();
     // This is for simple objects
-    mat4.lookAt(this.modelview.peek(), vec3.fromValues(0, 50, 200), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+    mat4.lookAt(this.modelview.peek(),cameraPos , vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
     //console.log(this.modelview.peek());
-
-    //Calculate the ray trace here by the model view stack from the camera
-
-    this.rayTrace(2,2,this.modelview,vec3.fromValues(0,0,200));
-    
-
+    //Calculate the ray trace here by the model view stack from the camere
+    mat4.getTranslation(position, this.modelview.peek());
+    //console.log(position[0],position[1],position[2]);
+    let colors : vec3[] = [];
+    let w : number = 800;
+    let h : number = 800;
+    colors = this.rayTrace(w,h,this.modelview,cameraPos);
     //This is for hogwarts model 
     //mat4.lookAt(this.modelview.peek(), vec3.fromValues(100, 100, 150), vec3.fromValues(75, 50, 0), vec3.fromValues(0, 1, 0));
 
     this.gl.uniformMatrix4fv(this.shaderLocations.getUniformLocation("projection"), false, this.proj);
+    this.rayTraceView.fillCanvas(colors,w,h);
 
 
 
     this.scenegraph.draw(this.modelview);
   }
 
-  public rayTrace(width : number, height : number, modelview : Stack<mat4>, cameraPos : vec3) : void{
+  public rayTrace(width : number, height : number, modelview : Stack<mat4>, cameraPos : vec3) : vec3[]{
     let i : number;
     let j : number;
-    let camera : mat4 = modelview.peek();
     let colors : vec3[] = [];
     // go through the row first then to the column
     for( i= -height / 2; i < height / 2; i ++) {
       for(j = -width / 2; j < width / 2; j ++) {
-        let ray : Ray = new Ray(cameraPos, vec3.fromValues(j + cameraPos[0],i + cameraPos[1], -1));
+        let pixel : vec3 = vec3.fromValues(cameraPos[0] + j, cameraPos[1] + i, 0);
+        let d : vec3 = vec3.create();
+        let u : vec3 = vec3.create();
+        let v : vec3 = vec3.create();
+        //TODO:
+        //Not sure the sign of this ray at z axis
+        vec3.scale(d, vec3.fromValues(0,0,1), cameraPos[2]);
+        vec3.scale(u, vec3.fromValues(1,0,0), pixel[0]);
+        vec3.scale(v, vec3.fromValues(0,1,0), pixel[1]);
+        let direction : vec3 = vec3.create();
+        vec3.add(direction, d,u);
+        vec3.add(direction, direction, v);
+        //vec3.normalize(direction,direction);
+
+        let ray : Ray = new Ray(cameraPos, direction);
         //console.log(ray.getDirection()[0], ray.getDirection()[1], ray.getDirection()[2]);
         let color : vec3 = this.rayCast(ray, modelview);
         //console.log(colors);
         colors.push(color);
       }
     }
+    //console.log(colors);
+    return colors;
   }
 
   public rayCast(ray : Ray, modelview : Stack<mat4>) : vec3 {
     let blackColor : vec3 = vec3.fromValues(0,0,0);
     let redColor : vec3 = vec3.fromValues(1,0,0);
+    let whiteColor : vec3 = vec3.fromValues(1,1,1);
     let color : vec3 = vec3.create();
     let hitRecord : HitRecord = this.scenegraph.closest_intersection(ray, modelview);
-    if(hitRecord.getTime() != Infinity) {
-      color = redColor;
+    //console.log(hitRecord.getTime());
+    if(hitRecord.getTime() < Infinity) {
+      //console.log(hitRecord.getTime());
+      return whiteColor;
     }
     else {
-      color = blackColor;
+      return blackColor;
     }
-    return color;
   }
 
   public freeMeshes(): void {

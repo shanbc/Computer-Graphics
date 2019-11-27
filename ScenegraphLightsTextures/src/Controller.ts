@@ -1,7 +1,9 @@
 import { View } from "View"
-import * as OBJ from "webgl-obj-loader"
-import { vec2,mat4 } from "gl-matrix"
-import { Material } from "%COMMON/Material"
+import * as OBJ from "webgl-obj-loader";
+import { vec2,mat4 } from "gl-matrix";
+import { Material } from "%COMMON/Material";
+import {RTView} from "./RTView";
+import {vec3} from "gl-matrix";
 
 export interface Features {
     /*mousePress(x: number, y: number): void;
@@ -53,15 +55,12 @@ export class Controller implements Features {
         return `
         attribute vec4 vPosition;
         attribute vec4 vNormal;
-        attribute vec2 vTexCoord;
         
         uniform mat4 projection;
         uniform mat4 modelview;
         uniform mat4 normalmatrix;
-        uniform mat4 texturematrix;
         varying vec3 fNormal;
         varying vec4 fPosition;
-        varying vec4 fTexCoord;
         
         void main()
         {
@@ -75,7 +74,6 @@ export class Controller implements Features {
         
             vec4 tNormal = normalmatrix * vNormal;
             fNormal = normalize(tNormal.xyz);
-            fTexCoord = texturematrix * vec4(vTexCoord.s,vTexCoord.t,0,1);
         }
         
     `;
@@ -105,10 +103,7 @@ export class Controller implements Features {
         
         varying vec3 fNormal;
         varying vec4 fPosition;
-        varying vec4 fTexCoord;
 
-        /* texture */
-        uniform sampler2D image;
         
         
         
@@ -158,7 +153,6 @@ export class Controller implements Features {
                     result = result + vec4(ambient+diffuse+specular,1.0);  
                 }  
             }
-            result = result * texture2D(image,fTexCoord.st);
             gl_FragColor = result;
         }
         
